@@ -1,0 +1,31 @@
+// DISABLED v4.5.2 — too many false positives on legitimate admin/IT scripts.
+// Lateral movement rules moved here; enable only in enterprise threat-hunt mode.
+
+rule Lateral_PsExec_Remote {
+    meta:
+        description = "PsExec remote execution with admin share"
+        severity = "Critical"
+        author = "TurkmenGuard"
+        disabled = "true"
+    strings:
+        $psexec = "psexec" nocase
+        $remote = "\\\\" nocase
+        $admin = "ADMIN$" nocase
+        $cmd = "cmd.exe" nocase
+    condition:
+        filesize < 512KB and all of them
+}
+
+rule Lateral_WMI_Remote_Exec {
+    meta:
+        description = "WMI remote process creation"
+        severity = "Critical"
+        author = "TurkmenGuard"
+        disabled = "true"
+    strings:
+        $wmi = "wmic" nocase
+        $node = "/node:" nocase
+        $process = "process call create" nocase
+    condition:
+        filesize < 256KB and all of them
+}

@@ -35,18 +35,18 @@ rule CredTheft_Comsvcs_MiniDump {
         $minidump = "MiniDump" nocase
         $lsass = "lsass" nocase
     condition:
-        filesize < 1MB and 2 of them
+        filesize < 1MB and all of them
 }
 
 rule CredTheft_SamHive_Export {
     meta:
-        description = "SAM/SYSTEM hive export for offline cracking"
-        severity = "High"
+        description = "SAM and SYSTEM hive export for offline cracking"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $reg = "reg save" nocase
-        $sam = "sam" nocase
-        $system = "system" nocase
+        $sam = " sam" nocase
+        $system = " system" nocase
     condition:
-        filesize < 512KB and $reg and 1 of ($sam, $system)
+        filesize < 256KB and all of ($reg, $sam, $system)
 }

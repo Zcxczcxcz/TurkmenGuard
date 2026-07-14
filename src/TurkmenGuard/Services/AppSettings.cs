@@ -40,6 +40,12 @@ public class AppSettings
         "\\packages\\",
         "\\AppData\\Local\\Programs\\",
         "\\AppData\\Local\\Microsoft\\",
+        "\\AppData\\Local\\Temp\\",
+        "\\Temp\\",
+        "\\Cache\\",
+        "\\Cached\\",
+        "\\GPUCache\\",
+        "\\Code Cache\\",
         "\\Windows\\WinSxS\\",
         "\\Windows\\Installer\\"
     ];

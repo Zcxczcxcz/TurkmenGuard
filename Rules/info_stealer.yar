@@ -1,54 +1,63 @@
-rule Stealer_Browser_Creds {
+// Info stealer — multiple theft-specific indicators required together.
+
+rule Stealer_Browser_Credentials {
     meta:
-        description = "Browser credential theft pattern"
+        description = "Browser credential database theft"
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $login = "Login Data" nocase
-        $chrome = "Google\\Chrome" nocase
-        $firefox = "Mozilla\\Firefox" nocase
+        $chrome = "Google\\Chrome\\User Data" nocase
+        $firefox = "Mozilla\\Firefox\\Profiles" nocase
         $cookies = "Cookies" nocase
+        $copy = "Copy-Item" nocase
     condition:
-        filesize < 5MB and 2 of them
+        filesize < 2MB and
+        $login and (1 of ($chrome, $firefox)) and (1 of ($cookies, $copy))
 }
 
-rule Stealer_Discord_Token {
+rule Stealer_Discord_Token_Grab {
     meta:
-        description = "Discord token stealer pattern"
-        severity = "High"
+        description = "Discord token extraction pattern"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
-        $discord = "discord" nocase
-        $token = "token" nocase
-        $local = "Local Storage" nocase
+        $discord = "discord\\Local Storage" nocase
+        $token = "mfa." nocase
+        $token2 = "token" nocase
         $leveldb = "leveldb" nocase
+        $hook = "GetAsyncKeyState" nocase
     condition:
-        filesize < 5MB and $discord and $token and 1 of ($local, $leveldb)
+        filesize < 2MB and
+        $discord and $leveldb and (1 of ($token, $token2)) and $hook
 }
 
 rule Stealer_Telegram_Session {
     meta:
-        description = "Telegram session file theft"
-        severity = "High"
+        description = "Telegram tdata session theft"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
-        $tg = "Telegram Desktop" nocase
-        $tdata = "tdata" nocase
+        $tg = "Telegram Desktop\\tdata" nocase
         $key = "key_datas" nocase
+        $copy = "Copy-Item" nocase
     condition:
-        filesize < 5MB and 2 of them
+        filesize < 2MB and all of ($tg, $key, $copy)
 }
 
-rule Stealer_Crypto_Wallet {
+rule Stealer_Crypto_Wallet_Files {
     meta:
         description = "Cryptocurrency wallet file theft"
-        severity = "High"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
-        $eth = "Ethereum" nocase
         $wallet = "wallet.dat" nocase
         $metamask = "MetaMask" nocase
         $exodus = "Exodus" nocase
+        $copy = "Copy-Item" nocase
+        $appdata = "AppData\\Roaming" nocase
     condition:
-        filesize < 5MB and 2 of them
+        filesize < 2MB and
+        $copy and $appdata and
+        (1 of ($wallet, $metamask, $exodus))
 }

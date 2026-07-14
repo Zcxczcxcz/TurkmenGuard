@@ -1,8 +1,8 @@
 namespace TurkmenGuard.Core;
 
 /// <summary>
-/// Reduces false positives in automated scans (PUA/PUP/heuristics, entropy, low-severity YARA).
-/// Manual single-file scan is slightly more permissive but still hides PUA noise.
+/// Reduces false positives in automated scans (PUA/PUP/heuristics, entropy, noisy YARA).
+/// Quick/RealTime rely on ClamAV; YARA heuristics are restricted on Full scans.
 /// </summary>
 public static class DetectionFilter
 {
@@ -20,6 +20,13 @@ public static class DetectionFilter
     [
         ".PUA.", ".PUP.", ".Adware.", ".Dialer.", ".Downloader.",
         "Unwanted", "Bundled", "InstallCore", "InstallMonetizer"
+    ];
+
+    /// <summary>Broad YARA rules that match legitimate admin/dev scripts.</summary>
+    private static readonly string[] HeuristicYaraMarkers =
+    [
+        "LOLBin_", "PS_Downloader", "Macro_", "Persist_", "WMI_",
+        "Batch_", "Lateral_", "Suspicious_", "Downloader_"
     ];
 
     public static bool IsNoiseSignature(string threatName)
@@ -42,6 +49,20 @@ public static class DetectionFilter
         return false;
     }
 
+    public static bool IsHeuristicYaraRule(string ruleName)
+    {
+        if (string.IsNullOrWhiteSpace(ruleName))
+            return false;
+
+        foreach (var marker in HeuristicYaraMarkers)
+        {
+            if (ruleName.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+        }
+
+        return false;
+    }
+
     public static bool IncludeInResults(ThreatInfo threat, ScanMode mode)
     {
         if (threat.Severity == ThreatSeverity.Test)
@@ -53,11 +74,19 @@ public static class DetectionFilter
         if (threat.Method == DetectionMethod.Entropy)
             return false;
 
+        if (threat.Method == DetectionMethod.YARA && IsHeuristicYaraRule(threat.ThreatName))
+        {
+            if (mode == ScanMode.SingleFile)
+                return threat.Severity >= ThreatSeverity.Medium;
+            // Full scan: heuristic YARA only at Critical (CredTheft/AMSI/WebShell stay Critical)
+            return threat.Severity >= ThreatSeverity.Critical;
+        }
+
         if (mode == ScanMode.SingleFile)
             return threat.Severity >= ThreatSeverity.Medium &&
                    ThreatSeverityRules.ShouldReport(threat.Severity);
 
-        // Quick / Full / RealTime — only serious findings
+        // Quick / Full / RealTime — ClamAV + strong YARA only
         return threat.Severity >= ThreatSeverity.High;
     }
 

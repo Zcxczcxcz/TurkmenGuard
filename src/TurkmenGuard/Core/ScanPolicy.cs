@@ -68,19 +68,38 @@ public static class ScanPolicy
     /// <summary>Cap for non-PE entropy sampling (script-like files).</summary>
     public const int MaxEntropySampleBytes = 262144; // 256 KB
 
+    /// <summary>Skipped in Quick/RealTime — archives and passive libs are slow and noisy.</summary>
+    private static readonly HashSet<string> QuickRealTimeSkipExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".zip", ".rar", ".7z", ".iso", ".img",
+        ".dll", ".pdf",
+        ".doc", ".xls", ".ppt",
+    };
+
     /// <summary>
     /// Decides whether a file should be scanned based on extension. Unknown
     /// extensions are skipped (closed allow-list model) so we never waste a
     /// full hash+YARA pass on inert data.
     /// </summary>
-    public static bool ShouldScanExtension(string filePath)
+    public static bool ShouldScanExtension(string filePath, ScanMode mode = ScanMode.Full)
     {
         var ext = Path.GetExtension(filePath);
         if (string.IsNullOrEmpty(ext))
-            return true; // extensionless files may be scripts/binaries — scan
+        {
+            if (mode is ScanMode.Quick or ScanMode.RealTime)
+                return false;
+            return true;
+        }
+
         if (SkipExtensions.Contains(ext))
             return false;
-        return ScannableExtensions.Contains(ext);
+        if (!ScannableExtensions.Contains(ext))
+            return false;
+
+        if (mode is ScanMode.Quick or ScanMode.RealTime && QuickRealTimeSkipExtensions.Contains(ext))
+            return false;
+
+        return true;
     }
 
     public static bool ShouldRunEntropy(string filePath)

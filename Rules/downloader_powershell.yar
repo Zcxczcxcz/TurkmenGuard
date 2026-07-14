@@ -1,51 +1,50 @@
-rule PS_Downloader_IEX {
+// Strict PowerShell download cradles — requires bypass + download + execute together.
+
+rule PS_Malicious_Cradle_IEX {
     meta:
-        description = "PowerShell IEX download cradle"
-        severity = "High"
+        description = "PowerShell IEX download cradle with execution policy bypass"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $iex = "IEX" nocase
         $download = "DownloadString" nocase
         $web = "Net.WebClient" nocase
+        $bypass = "-ExecutionPolicy Bypass" nocase
+        $hidden = "-WindowStyle Hidden" nocase
     condition:
-        filesize < 1MB and 2 of them
+        filesize < 512KB and
+        $iex and $download and $web and (1 of ($bypass, $hidden))
 }
 
-rule PS_Downloader_InvokeWebRequest {
+rule PS_Malicious_EncodedPayload {
     meta:
-        description = "PowerShell Invoke-WebRequest dropper"
-        severity = "High"
+        description = "PowerShell encoded command with decode and execute"
+        severity = "Critical"
+        author = "TurkmenGuard"
+    strings:
+        $enc = "-EncodedCommand" nocase
+        $b64 = "FromBase64String" nocase
+        $iex = "IEX" nocase
+        $invoke = "Invoke-Expression" nocase
+        $bypass = "-ExecutionPolicy Bypass" nocase
+    condition:
+        filesize < 512KB and
+        $enc and $b64 and (1 of ($iex, $invoke)) and $bypass
+}
+
+rule PS_Malicious_WebDropper {
+    meta:
+        description = "PowerShell web dropper with hidden execution"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $iwr = "Invoke-WebRequest" nocase
         $out = "-OutFile" nocase
         $uri = "-Uri" nocase
-    condition:
-        filesize < 1MB and $iwr and 1 of ($out, $uri)
-}
-
-rule PS_Downloader_BitsTransfer {
-    meta:
-        description = "PowerShell BitsTransfer download"
-        severity = "High"
-        author = "TurkmenGuard"
-    strings:
-        $bits = "Start-BitsTransfer" nocase
-        $source = "-Source" nocase
-        $dest = "-Destination" nocase
-    condition:
-        filesize < 1MB and $bits and 1 of ($source, $dest)
-}
-
-rule PS_Downloader_FromBase64 {
-    meta:
-        description = "PowerShell base64 encoded payload execution"
-        severity = "High"
-        author = "TurkmenGuard"
-    strings:
-        $b64 = "FromBase64String" nocase
-        $enc = "-EncodedCommand" nocase
+        $hidden = "-WindowStyle Hidden" nocase
         $bypass = "-ExecutionPolicy Bypass" nocase
+        $start = "Start-Process" nocase
     condition:
-        filesize < 2MB and 2 of them
+        filesize < 512KB and
+        $iwr and $out and $uri and (1 of ($hidden, $bypass, $start))
 }

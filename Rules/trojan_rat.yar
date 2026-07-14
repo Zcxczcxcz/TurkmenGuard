@@ -1,52 +1,55 @@
-rule RAT_AsyncRAT_Markers {
+// RAT families — multiple family-specific markers required.
+
+rule RAT_AsyncRAT_Family {
     meta:
-        description = "AsyncRAT family strings"
+        description = "AsyncRAT family markers"
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $async = "AsyncRAT" nocase
         $stub = "Stub.exe" nocase
         $paste = "pastebin.com" nocase
+        $server = "ServerCertificate" nocase
     condition:
-        filesize < 20MB and 2 of them
+        filesize < 20MB and 3 of them
 }
 
-rule RAT_NjRAT_Strings {
+rule RAT_NjRAT_Family {
     meta:
-        description = "njRAT / Bladabindi markers"
+        description = "njRAT / Bladabindi family markers"
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $nj = "njRAT" nocase
         $bla = "Bladabindi" nocase
         $7e = "7e72e5" nocase
+        $dc = "DcRat" nocase
     condition:
-        filesize < 20MB and any of them
+        filesize < 20MB and 2 of them
 }
 
-rule RAT_Quasar_Markers {
+rule RAT_Quasar_Client {
     meta:
-        description = "Quasar RAT client markers"
+        description = "Quasar RAT client binary markers"
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
-        $quasar = "Quasar" nocase
-        $client = "QuasarClient" nocase
+        $quasar = "QuasarClient" nocase
         $mosaic = "MosaicLoader" nocase
+        $conn = "ConnectServer" nocase
     condition:
-        filesize < 30MB and 1 of ($quasar, $client, $mosaic)
+        filesize < 30MB and 2 of them
 }
 
-rule RAT_Reverse_Shell {
+rule RAT_Metasploit_Payload {
     meta:
-        description = "Reverse shell connection pattern"
-        severity = "High"
+        description = "Metasploit reverse shell payload markers"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $rev = "reverse_tcp" nocase
-        $bind = "bind_tcp" nocase
         $meter = "meterpreter" nocase
-        $nc = "nc.exe" nocase
+        $stage = "metsrv.dll" nocase
     condition:
-        filesize < 5MB and any of them
+        filesize < 5MB and 2 of them
 }

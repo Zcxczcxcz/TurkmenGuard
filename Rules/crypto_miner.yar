@@ -1,54 +1,49 @@
-rule Miner_XMRig_Strings {
+// Cryptocurrency miners — pool connection + miner binary markers together.
+
+rule Miner_XMRig_Active {
     meta:
-        description = "XMRig cryptocurrency miner markers"
-        severity = "High"
+        description = "XMRig miner with pool configuration"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $xmrig = "xmrig" nocase
         $donate = "donate-level" nocase
-        $randomx = "randomx" nocase
         $pool = "stratum+tcp" nocase
+        $randomx = "randomx" nocase
     condition:
-        filesize < 50MB and 2 of them
+        filesize < 50MB and 3 of them
 }
 
-rule Miner_Stratum_Pool {
+rule Miner_Stratum_Wallet {
     meta:
-        description = "Stratum mining pool connection strings"
-        severity = "High"
+        description = "Stratum pool with wallet address"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $stratum = "stratum+tcp://" nocase
         $stratum_ssl = "stratum+ssl://" nocase
         $wallet = "wallet" nocase
         $worker = "worker" nocase
+        $xmr = "monero" nocase
     condition:
-        filesize < 10MB and 1 of ($stratum, $stratum_ssl) and 1 of ($wallet, $worker)
+        filesize < 5MB and
+        (1 of ($stratum, $stratum_ssl)) and
+        2 of ($wallet, $worker, $xmr)
 }
 
-rule Miner_CGMiner_Ethminer {
+rule Miner_Known_Binary {
     meta:
-        description = "Known miner binary strings"
-        severity = "High"
+        description = "Known miner binary with pool domain"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $cg = "cgminer" nocase
         $eth = "ethminer" nocase
         $nanopool = "nanopool.org" nocase
         $nicehash = "nicehash.com" nocase
+        $pool = "stratum" nocase
     condition:
-        filesize < 50MB and any of them
-}
-
-rule Miner_Silent_CPU_Mining {
-    meta:
-        description = "Silent CPU mining script pattern"
-        severity = "Medium"
-        author = "TurkmenGuard"
-    strings:
-        $coinhive = "coinhive" nocase
-        $cryptonight = "cryptonight" nocase
-        $minero = "minero.cc" nocase
-    condition:
-        filesize < 5MB and any of them
+        filesize < 50MB and
+        (1 of ($cg, $eth)) and
+        (1 of ($nanopool, $nicehash, $pool))
 }

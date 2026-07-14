@@ -14,6 +14,7 @@ public class ScannerEngine : IDisposable
     private readonly AppSettings _settings;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly SemaphoreSlim _fileScanSemaphore = new(1, 1);
+    private readonly SemaphoreSlim _bulkParallelism = new(3, 3);
     private readonly object _ctsLock = new();
     private CancellationTokenSource? _scanCts;
     private int _bulkScanDepth;
@@ -81,14 +82,18 @@ public class ScannerEngine : IDisposable
         if (mode == ScanMode.RealTime && IsBulkScanActive)
             return ScanResult.Clean(path);
 
-        await _fileScanSemaphore.WaitAsync(ct);
+        var skipSemaphore = mode == ScanMode.Quick && IsBulkScanActive;
+
+        if (!skipSemaphore)
+            await _fileScanSemaphore.WaitAsync(ct);
         try
         {
             return await Task.Run(() => ScanFileCore(path, mode, ct), ct);
         }
         finally
         {
-            _fileScanSemaphore.Release();
+            if (!skipSemaphore)
+                _fileScanSemaphore.Release();
         }
     }
 
@@ -101,11 +106,17 @@ public class ScannerEngine : IDisposable
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return result;
 
-        if (_settings.IsExcluded(path) || !ScanPolicy.ShouldScanExtension(path))
+        if (_settings.IsExcluded(path) || !ScanPolicy.ShouldScanExtension(path, mode))
             return result;
 
-        var clamTimeoutMs = mode == ScanMode.RealTime ? 30_000 : 120_000;
+        var clamTimeoutMs = mode switch
+        {
+            ScanMode.RealTime => 30_000,
+            ScanMode.Quick => 20_000,
+            _ => 120_000
+        };
         var allowClamScanFallback = mode == ScanMode.SingleFile;
+        var useYara = mode is ScanMode.Full or ScanMode.SingleFile;
 
         try
         {
@@ -129,7 +140,7 @@ public class ScannerEngine : IDisposable
                 }
             }
 
-            if (_yara.IsAvailable)
+            if (useYara && _yara.IsAvailable)
             {
                 result.Threats.AddRange(_yara.Scan(path));
                 if (result.Threats.Count > 0)
@@ -181,7 +192,53 @@ public class ScannerEngine : IDisposable
         if (!Directory.Exists(directory))
             return results;
 
-        foreach (var file in PathHelper.EnumerateFilesSafe(directory))
+        var files = PathHelper.EnumerateFilesSafe(directory)
+            .Where(f => !_settings.IsExcluded(f) && ScanPolicy.ShouldScanExtension(f, mode))
+            .ToList();
+
+        if (progress != null && mode == ScanMode.Quick)
+            progress.TotalFiles = files.Count;
+
+        if (mode == ScanMode.Quick && files.Count > 1)
+        {
+            var bag = new System.Collections.Concurrent.ConcurrentBag<ScanResult>();
+            var scanned = 0;
+            var threatCount = 0;
+
+            var tasks = files.Select(async file =>
+            {
+                await _bulkParallelism.WaitAsync(ct);
+                try
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var n = Interlocked.Increment(ref scanned);
+                    if (progress != null)
+                    {
+                        progress.CurrentFile = file;
+                        progress.FilesScanned = n;
+                        ReportProgressThrottled(progress);
+                    }
+
+                    var result = await ScanFileAsync(file, mode, ct);
+                    if (result.IsThreat)
+                    {
+                        Interlocked.Increment(ref threatCount);
+                        bag.Add(result);
+                    }
+                }
+                finally
+                {
+                    _bulkParallelism.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+            if (progress != null)
+                progress.ThreatsFound = threatCount;
+            return bag.ToList();
+        }
+
+        foreach (var file in files)
         {
             ct.ThrowIfCancellationRequested();
             if (progress != null)
@@ -197,10 +254,8 @@ public class ScannerEngine : IDisposable
                 if (progress != null) progress.ThreatsFound++;
                 results.Add(result);
             }
-
-            if (progress != null && progress.FilesScanned % 5 == 0)
-                await Task.Delay(1, ct);
         }
+
         return results;
     }
 
@@ -362,6 +417,7 @@ public class ScannerEngine : IDisposable
         }
         _scanLock.Dispose();
         _fileScanSemaphore.Dispose();
+        _bulkParallelism.Dispose();
         _clam.Dispose();
         _yara.Dispose();
     }

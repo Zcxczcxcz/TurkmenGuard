@@ -76,9 +76,8 @@ public class ApplicationServices
         WireActivityEvents();
 
         if (Settings.RealTimeEnabled)
-            RealTimeGuard.Start();
-
-        if (Settings.ProcessMonitorEnabled)
+            SetRealTimeProtection(true);
+        else if (Settings.ProcessMonitorEnabled)
             ProcessMonitor.Start();
 
         ScanScheduler.Start();
@@ -164,15 +163,15 @@ public class ApplicationServices
             Notifications.Dispose();
         }
 
-        if (Settings.ProcessMonitorEnabled)
-            ProcessMonitor.Start();
-        else
-            ProcessMonitor.Stop();
-
         if (Settings.RealTimeEnabled)
+            SetRealTimeProtection(true);
+        else
         {
-            RealTimeGuard.Stop();
-            RealTimeGuard.Start();
+            SetRealTimeProtection(false);
+            if (Settings.ProcessMonitorEnabled)
+                ProcessMonitor.Start();
+            else
+                ProcessMonitor.Stop();
         }
 
         ScanScheduler.Restart();
@@ -180,6 +179,27 @@ public class ApplicationServices
     }
 
     public void RequestDashboardRefresh() => DashboardRefreshRequested?.Invoke();
+
+    /// <summary>Real-time protection = filesystem watcher + process monitor.</summary>
+    public void SetRealTimeProtection(bool enabled)
+    {
+        if (enabled)
+        {
+            RealTimeGuard.Start();
+            ProcessMonitor.Start();
+            Settings.ProcessMonitorEnabled = true;
+        }
+        else
+        {
+            RealTimeGuard.Stop();
+            ProcessMonitor.Stop();
+            Settings.ProcessMonitorEnabled = false;
+        }
+
+        Settings.RealTimeEnabled = enabled;
+        SettingsService.Save(Settings);
+        DashboardRefreshRequested?.Invoke();
+    }
 
     public void Shutdown()
     {

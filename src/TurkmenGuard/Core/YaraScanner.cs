@@ -38,7 +38,10 @@ public sealed class YaraScanner : IDisposable
                 return false;
             }
 
-            var yarFiles = Directory.GetFiles(rulesDirectory, "*.yar", SearchOption.TopDirectoryOnly);
+            var yarFiles = Directory.GetFiles(rulesDirectory, "*.yar", SearchOption.TopDirectoryOnly)
+                .Where(f => Path.GetFileName(f).IndexOf(".disabled", StringComparison.OrdinalIgnoreCase) < 0)
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
             if (yarFiles.Length == 0)
             {
                 LastError = "No .yar rule files found";
@@ -169,16 +172,19 @@ public sealed class YaraScanner : IDisposable
         if (ruleName.IndexOf("Ransomware", StringComparison.OrdinalIgnoreCase) >= 0 ||
             ruleName.IndexOf("Dropper", StringComparison.OrdinalIgnoreCase) >= 0 ||
             ruleName.IndexOf("Obfuscated", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("Encoded", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("Persist_", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("Lateral_", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("LOLBin_", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("PS_Downloader", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("Miner_", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("Macro_", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("WMI_", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            ruleName.IndexOf("Batch_", StringComparison.OrdinalIgnoreCase) >= 0)
+            ruleName.IndexOf("Encoded", StringComparison.OrdinalIgnoreCase) >= 0)
             return ThreatSeverity.High;
+
+        // Admin/dev script heuristics — advisory unless manually scanned
+        if (ruleName.IndexOf("LOLBin_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            ruleName.IndexOf("PS_Downloader", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            ruleName.IndexOf("Macro_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            ruleName.IndexOf("Persist_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            ruleName.IndexOf("WMI_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            ruleName.IndexOf("Batch_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            ruleName.IndexOf("Lateral_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            ruleName.IndexOf("Miner_", StringComparison.OrdinalIgnoreCase) >= 0)
+            return ThreatSeverity.Medium;
 
         return ThreatSeverity.Medium;
     }

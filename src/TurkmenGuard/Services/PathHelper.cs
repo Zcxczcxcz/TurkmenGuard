@@ -62,13 +62,13 @@ public static class PathHelper
         return folders.Distinct().ToList();
     }
 
+    /// <summary>User-facing folders only — Temp is excluded (huge, mostly FPs, slow).</summary>
     public static List<string> GetQuickScanPaths()
     {
         var paths = new List<string>();
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         AddIfExists(paths, Path.Combine(userProfile, "Downloads"));
         AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
-        AddIfExists(paths, Path.GetTempPath());
         AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
         return paths;
     }

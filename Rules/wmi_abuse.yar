@@ -1,38 +1,30 @@
-rule WMI_Process_Create {
-    meta:
-        description = "WMI Win32_Process creation abuse"
-        severity = "High"
-        author = "TurkmenGuard"
-    strings:
-        $wmi = "Win32_Process" nocase
-        $create = "Create" nocase
-        $wmic = "wmic" nocase
-    condition:
-        filesize < 1MB and 2 of them
-}
+// WMI abuse — specific subscription or remote exec chains only.
 
-rule WMI_EventFilter_Abuse {
+rule WMI_EventFilter_Persistence {
     meta:
-        description = "WMI event filter for code execution"
-        severity = "High"
+        description = "WMI event subscription persistence chain"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $filter = "SELECT * FROM __InstanceModificationEvent" nocase
         $wmi = "root\\subscription" nocase
         $consumer = "ActiveScriptEventConsumer" nocase
     condition:
-        filesize < 2MB and 2 of them
+        filesize < 1MB and all of them
 }
 
-rule WMI_Remote_Exec {
+rule WMI_Remote_Process_Create {
     meta:
-        description = "WMI remote execution via PowerShell"
-        severity = "High"
+        description = "WMI remote process creation via PowerShell"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $invoke = "Invoke-WmiMethod" nocase
         $cim = "Invoke-CimMethod" nocase
         $process = "Win32_Process" nocase
+        $create = "Create" nocase
+        $node = "-ComputerName" nocase
     condition:
-        filesize < 1MB and 1 of ($invoke, $cim) and $process
+        filesize < 512KB and
+        (1 of ($invoke, $cim)) and $process and $create and $node
 }

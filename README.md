@@ -1,4 +1,4 @@
-# TurkmenGuard (Türkmen Goragçy) v4.5.0
+# TurkmenGuard (Türkmen Goragçy) v4.5.2
 
 **Репозиторий:** https://github.com/Zcxczcxcz/TurkmenGuard  
 **Для разработчиков:** [docs/DEVELOPERS.md](docs/DEVELOPERS.md) · **Backend API:** [backend/README.md](backend/README.md)
@@ -19,7 +19,7 @@
 | Движок | **ClamAV 1.5.3** (полный libclamav) → YARA → Entropy (PE, 7.95) |
 | Hash fallback | SQLite 540k+ (если ClamAV engine не установлен) |
 | Сеть | `SignatureUpdateService` + `freshclam` для CVD |
-| Версия | **4.5.0** |
+| Версия | **4.5.2** |
 
 ### Функции
 
@@ -418,6 +418,19 @@ TurkmenGuard/
 ---
 
 ## История изменений (Changelog)
+
+### v4.5.2 (2026-07-14) — мягкие YARA, только реальные угрозы
+- **YARA v4.5.2 strict** — правила требуют 2–4 индикатора вместе (не один `powershell` или `Quasar`)
+- Отключены шумные `lateral_movement` (файл `.yar.disabled`)
+- Macro/LOLBin/Persist/Stealer/Miner/RAT — переписаны под реальные цепочки атак
+- Quick Scan — ClamAV only; Full/SingleFile — строгий YARA
+
+### v4.5.1 (2026-07-14) — ложные срабатывания, скорость Quick Scan, RT+процессы
+- **Quick Scan** — только ClamAV (без YARA); YARA остаётся в Full и «Скан файла»
+- **Quick Scan быстрее** — убран `%TEMP%`, архивы/DLL/PDF пропускаются, 3 параллельных потока
+- **YARA heuristics** (LOLBin, Macro, PS_Downloader…) — severity Medium; в Full только Critical
+- **Real-time** — при включении автоматически стартует **мониторинг процессов** (новые .exe)
+- ProcessMonitor: интервал 5 с (было 10)
 
 ### v4.5.0 (2026-07-14) — деплой + GitHub
 - **GitHub:** https://github.com/Zcxczcxcz/TurkmenGuard — ClamAV engine + CVD + hash DB + YARA в репозитории

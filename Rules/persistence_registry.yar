@@ -1,52 +1,50 @@
-rule Persist_RunKey_PowerShell {
+// Persistence — requires registry target AND malicious payload together.
+
+rule Persist_RunKey_Malicious {
     meta:
-        description = "Registry Run key persistence via PowerShell"
-        severity = "High"
+        description = "Run key persistence with encoded/hidden payload"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $run = "CurrentVersion\\Run" nocase
         $ps = "powershell" nocase
         $set = "Set-ItemProperty" nocase
+        $hidden = "-WindowStyle Hidden" nocase
+        $enc = "-EncodedCommand" nocase
     condition:
-        filesize < 512KB and 2 of them
+        filesize < 256KB and
+        $run and $ps and $set and (1 of ($hidden, $enc))
 }
 
-rule Persist_RunOnce {
+rule Persist_Schtasks_Hidden {
     meta:
-        description = "RunOnce registry persistence"
-        severity = "High"
-        author = "TurkmenGuard"
-    strings:
-        $runonce = "RunOnce" nocase
-        $reg = "reg add" nocase
-        $hkcu = "HKCU" nocase
-    condition:
-        filesize < 512KB and $runonce and 1 of ($reg, $hkcu)
-}
-
-rule Persist_StartupFolder {
-    meta:
-        description = "Copy to Startup folder persistence"
-        severity = "Medium"
-        author = "TurkmenGuard"
-    strings:
-        $startup = "Startup" nocase
-        $shell = "shell:startup" nocase
-        $copy = "copy " nocase
-    condition:
-        filesize < 512KB and 2 of them
-}
-
-rule Persist_Schtasks_Create {
-    meta:
-        description = "Scheduled task persistence"
-        severity = "High"
+        description = "Hidden scheduled task persistence at logon/startup"
+        severity = "Critical"
         author = "TurkmenGuard"
     strings:
         $sch = "schtasks" nocase
         $create = "/create" nocase
         $onlogon = "/sc onlogon" nocase
         $onstart = "/sc onstart" nocase
+        $hidden = "/rl highest" nocase
+        $ps = "powershell" nocase
     condition:
-        filesize < 512KB and $sch and $create and 1 of ($onlogon, $onstart)
+        filesize < 256KB and
+        all of ($sch, $create, $ps) and
+        (1 of ($onlogon, $onstart))
+}
+
+rule Persist_StartupFolder_Executable {
+    meta:
+        description = "Copy executable to Startup folder"
+        severity = "High"
+        author = "TurkmenGuard"
+    strings:
+        $startup = "shell:startup" nocase
+        $copy = "copy " nocase
+        $exe = ".exe" nocase
+        $bat = "@echo off" nocase
+    condition:
+        filesize < 128KB and
+        all of ($startup, $copy, $exe, $bat)
 }

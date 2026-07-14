@@ -52,7 +52,7 @@ public class ProcessMonitor : IDisposable
             DisposeProcesses(snapshot);
         }
 
-        _timer = new System.Threading.Timer(_ => CheckProcesses(), null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+        _timer = new System.Threading.Timer(_ => CheckProcesses(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
         Logger.Info("Process monitor started");
     }
 

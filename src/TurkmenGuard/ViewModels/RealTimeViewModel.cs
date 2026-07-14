@@ -72,9 +72,9 @@ public partial class RealTimeViewModel : ViewModelBase
         if (_suppressToggle) return;
 
         if (value)
-            _services.RealTimeGuard.Start();
+            _services.SetRealTimeProtection(true);
         else
-            _services.RealTimeGuard.Stop();
+            _services.SetRealTimeProtection(false);
 
         RefreshStatus();
     }
