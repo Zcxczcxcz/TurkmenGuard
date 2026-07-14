@@ -1,5 +1,6 @@
 # Creates GitHub repo and uploads release zip (run once after: gh auth login)
 param(
+    [string]$Owner = "Zcxczcxcz",
     [string]$RepoName = "TurkmenGuard",
     [string]$Version = "4.5.0",
     [switch]$Private
