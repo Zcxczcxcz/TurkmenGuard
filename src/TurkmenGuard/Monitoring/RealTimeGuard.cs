@@ -166,7 +166,7 @@ public class RealTimeGuard : IDisposable
                     if (!File.Exists(path)) continue;
 
                     FileEvent?.Invoke(path);
-                    await _scanner.ScanFileAsync(path, ScanMode.RealTime);
+                    await _scanner.ScanFileAsync(path, ScanMode.RealTime).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

@@ -85,10 +85,10 @@ public class ScannerEngine : IDisposable
         var skipSemaphore = mode == ScanMode.Quick && IsBulkScanActive;
 
         if (!skipSemaphore)
-            await _fileScanSemaphore.WaitAsync(ct);
+            await _fileScanSemaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            return await Task.Run(() => ScanFileCore(path, mode, ct), ct);
+            return await Task.Run(() => ScanFileCore(path, mode, ct), ct).ConfigureAwait(false);
         }
         finally
         {
@@ -192,71 +192,122 @@ public class ScannerEngine : IDisposable
         if (!Directory.Exists(directory))
             return results;
 
-        var files = PathHelper.EnumerateFilesSafe(directory)
-            .Where(f => !_settings.IsExcluded(f) && ScanPolicy.ShouldScanExtension(f, mode))
-            .ToList();
+        if (_settings.ShouldSkipDirectory(directory))
+            return results;
 
-        if (progress != null && mode == ScanMode.Quick)
-            progress.TotalFiles = files.Count;
+        Func<string, bool> skipDir = _settings.ShouldSkipDirectory;
 
-        if (mode == ScanMode.Quick && files.Count > 1)
+        // Quick scan: small trees — pre-list for parallel scan + progress bar
+        if (mode == ScanMode.Quick)
         {
-            var bag = new System.Collections.Concurrent.ConcurrentBag<ScanResult>();
-            var scanned = 0;
-            var threatCount = 0;
+            var quickFiles = PathHelper.EnumerateFilesSafe(directory, skipDir)
+                .Where(f => !_settings.IsExcluded(f) && ScanPolicy.ShouldScanExtension(f, mode))
+                .ToList();
 
-            var tasks = files.Select(async file =>
-            {
-                await _bulkParallelism.WaitAsync(ct);
-                try
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var n = Interlocked.Increment(ref scanned);
-                    if (progress != null)
-                    {
-                        progress.CurrentFile = file;
-                        progress.FilesScanned = n;
-                        ReportProgressThrottled(progress);
-                    }
-
-                    var result = await ScanFileAsync(file, mode, ct);
-                    if (result.IsThreat)
-                    {
-                        Interlocked.Increment(ref threatCount);
-                        bag.Add(result);
-                    }
-                }
-                finally
-                {
-                    _bulkParallelism.Release();
-                }
-            });
-
-            await Task.WhenAll(tasks);
             if (progress != null)
-                progress.ThreatsFound = threatCount;
-            return bag.ToList();
+                progress.TotalFiles = quickFiles.Count;
+
+            if (quickFiles.Count > 1)
+                return await ScanFilesParallelAsync(quickFiles, mode, progress, ct).ConfigureAwait(false);
+
+            foreach (var file in quickFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                await ScanOneFileAsync(file, mode, progress, results, ct).ConfigureAwait(false);
+            }
+
+            return results;
         }
 
-        foreach (var file in files)
+        // Full / custom bulk — stream files; never materialize whole drive into RAM
+        var scanned = 0;
+        foreach (var file in PathHelper.EnumerateFilesSafe(directory, skipDir))
         {
             ct.ThrowIfCancellationRequested();
-            if (progress != null)
+
+            if (_settings.IsExcluded(file) || !ScanPolicy.ShouldScanExtension(file, mode))
+                continue;
+
+            scanned++;
+            if (progress != null && (scanned == 1 || scanned % 8 == 0))
             {
                 progress.CurrentFile = file;
-                progress.FilesScanned++;
+                progress.FilesScanned = scanned;
                 ReportProgressThrottled(progress);
             }
 
-            var result = await ScanFileAsync(file, mode, ct);
+            if (mode == ScanMode.Full && scanned % 64 == 0)
+                await Task.Yield();
+
+            var result = await ScanFileAsync(file, mode, ct).ConfigureAwait(false);
             if (result.IsThreat)
             {
-                if (progress != null) progress.ThreatsFound++;
+                if (progress != null)
+                    progress.ThreatsFound++;
                 results.Add(result);
             }
         }
 
         return results;
+    }
+
+    private async Task ScanOneFileAsync(
+        string file, ScanMode mode, ScanProgress? progress, List<ScanResult> results, CancellationToken ct)
+    {
+        if (progress != null)
+        {
+            progress.CurrentFile = file;
+            progress.FilesScanned++;
+            ReportProgressThrottled(progress);
+        }
+
+        var result = await ScanFileAsync(file, mode, ct).ConfigureAwait(false);
+        if (result.IsThreat)
+        {
+            if (progress != null)
+                progress.ThreatsFound++;
+            results.Add(result);
+        }
+    }
+
+    private async Task<List<ScanResult>> ScanFilesParallelAsync(
+        List<string> files, ScanMode mode, ScanProgress? progress, CancellationToken ct)
+    {
+        var bag = new System.Collections.Concurrent.ConcurrentBag<ScanResult>();
+        var scanned = 0;
+        var threatCount = 0;
+
+        var tasks = files.Select(async file =>
+        {
+            await _bulkParallelism.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+                var n = Interlocked.Increment(ref scanned);
+                if (progress != null)
+                {
+                    progress.CurrentFile = file;
+                    progress.FilesScanned = n;
+                    ReportProgressThrottled(progress);
+                }
+
+                var result = await ScanFileAsync(file, mode, ct).ConfigureAwait(false);
+                if (result.IsThreat)
+                {
+                    Interlocked.Increment(ref threatCount);
+                    bag.Add(result);
+                }
+            }
+            finally
+            {
+                _bulkParallelism.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        if (progress != null)
+            progress.ThreatsFound = threatCount;
+        return bag.ToList();
     }
 
     private void ReportProgressThrottled(ScanProgress progress)
@@ -272,7 +323,7 @@ public class ScannerEngine : IDisposable
 
     public async Task<List<ScanResult>> RunScanAsync(ScanMode mode, CancellationToken ct = default)
     {
-        await _scanLock.WaitAsync(ct);
+        await _scanLock.WaitAsync(ct).ConfigureAwait(false);
         Interlocked.Exchange(ref _isScanning, 1);
         EnterBulkScan();
         var progress = new ScanProgress { TotalFiles = 0, IsRunning = true };
@@ -289,7 +340,7 @@ public class ScannerEngine : IDisposable
             {
                 token.ThrowIfCancellationRequested();
                 if (!Directory.Exists(root)) continue;
-                allResults.AddRange(await ScanDirectoryAsync(root, mode, progress, token));
+                allResults.AddRange(await ScanDirectoryAsync(root, mode, progress, token).ConfigureAwait(false));
             }
 
             RecordScanStats(progress.FilesScanned, allResults);
@@ -314,7 +365,7 @@ public class ScannerEngine : IDisposable
 
     public async Task<List<ScanResult>?> TryRunScheduledScanAsync(ScanMode mode)
     {
-        if (!await _scanLock.WaitAsync(0))
+        if (!await _scanLock.WaitAsync(0).ConfigureAwait(false))
         {
             Logger.Info("Scheduled scan skipped — another scan is running");
             return null;
@@ -332,7 +383,7 @@ public class ScannerEngine : IDisposable
             foreach (var root in PathHelper.GetQuickScanPaths())
             {
                 if (!Directory.Exists(root)) continue;
-                allResults.AddRange(await ScanDirectoryAsync(root, mode, progress, token));
+                allResults.AddRange(await ScanDirectoryAsync(root, mode, progress, token).ConfigureAwait(false));
             }
 
             RecordScanStats(progress.FilesScanned, allResults);
@@ -353,7 +404,8 @@ public class ScannerEngine : IDisposable
         _settings.TotalFilesScanned += filesScanned;
         _settings.TotalThreatsFound += CountActionableThreats(results);
         _settings.LastScheduledScan = DateTime.Now;
-        SettingsService.Save(_settings);
+        var settings = _settings;
+        _ = Task.Run(() => SettingsService.Save(settings));
     }
 
     private static int CountActionableThreats(IEnumerable<ScanResult> results) =>

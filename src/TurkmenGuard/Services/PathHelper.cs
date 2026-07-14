@@ -79,8 +79,11 @@ public static class PathHelper
             .Select(d => d.RootDirectory.FullName)
             .ToList();
 
-    public static IEnumerable<string> EnumerateFilesSafe(string directory)
+    public static IEnumerable<string> EnumerateFilesSafe(string directory, Func<string, bool>? skipDirectory = null)
     {
+        if (skipDirectory?.Invoke(directory) == true)
+            yield break;
+
         IEnumerable<string> files;
         try { files = Directory.EnumerateFiles(directory); }
         catch { yield break; }
@@ -101,7 +104,10 @@ public static class PathHelper
 
         foreach (var sub in dirs)
         {
-            foreach (var f in EnumerateFilesSafe(sub))
+            if (skipDirectory?.Invoke(sub) == true)
+                continue;
+
+            foreach (var f in EnumerateFilesSafe(sub, skipDirectory))
                 yield return f;
         }
     }

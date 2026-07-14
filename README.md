@@ -1,4 +1,4 @@
-# TurkmenGuard (Türkmen Goragçy) v4.5.2
+# TurkmenGuard (Türkmen Goragçy) v4.5.3
 
 **Репозиторий:** https://github.com/Zcxczcxcz/TurkmenGuard  
 **Для разработчиков:** [docs/DEVELOPERS.md](docs/DEVELOPERS.md) · **Backend API:** [backend/README.md](backend/README.md)
@@ -19,7 +19,7 @@
 | Движок | **ClamAV 1.5.3** (полный libclamav) → YARA → Entropy (PE, 7.95) |
 | Hash fallback | SQLite 540k+ (если ClamAV engine не установлен) |
 | Сеть | `SignatureUpdateService` + `freshclam` для CVD |
-| Версия | **4.5.2** |
+| Версия | **4.5.3** |
 
 ### Функции
 
@@ -418,6 +418,13 @@ TurkmenGuard/
 ---
 
 ## История изменений (Changelog)
+
+### v4.5.3 (2026-07-14) — Full Scan не морозит UI
+- **Full Scan** — потоковое перечисление файлов (без `.ToList()` на весь диск)
+- **Пропуск папок** на уровне каталогов (`Windows`, `$Recycle.Bin`, исключения) — не обходим миллионы файлов впустую
+- **`ConfigureAwait(false)`** в движке сканирования — работа не блокирует UI-поток WPF
+- Прогресс Full Scan обновляется во время обхода; сохранение settings в фоне
+- UI: `DispatcherPriority.Background` для прогресса и результатов
 
 ### v4.5.2 (2026-07-14) — мягкие YARA, только реальные угрозы
 - **YARA v4.5.2 strict** — правила требуют 2–4 индикатора вместе (не один `powershell` или `Quasar`)

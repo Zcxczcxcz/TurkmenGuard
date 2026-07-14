@@ -81,22 +81,32 @@ public partial class ScanViewModel : ViewModelBase
             return;
 
         _lastProgressUi = now;
-        System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
         {
-            IsScanning = p.IsRunning;
-            IsIndeterminate = p.IsRunning && p.TotalFiles <= 0;
-            if (p.TotalFiles > 0)
-            {
-                ProgressValue = (double)p.FilesScanned / p.TotalFiles * 100;
-                ProgressText = LocalizationService.Format("ScanProgress", p.FilesScanned, p.TotalFiles, Path.GetFileName(p.CurrentFile));
-            }
-            else if (p.IsRunning)
-            {
-                ProgressText = LocalizationService.Format("ScanProgressIndeterminate", p.FilesScanned, Path.GetFileName(p.CurrentFile));
-            }
-            ThreatsFound = p.ThreatsFound;
-            UpdateThreatsLabel();
-        }));
+            ApplyProgress(p);
+            return;
+        }
+
+        dispatcher.BeginInvoke(new Action(() => ApplyProgress(p)),
+            System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    private void ApplyProgress(ScanProgress p)
+    {
+        IsScanning = p.IsRunning;
+        IsIndeterminate = p.IsRunning && p.TotalFiles <= 0;
+        if (p.TotalFiles > 0)
+        {
+            ProgressValue = (double)p.FilesScanned / p.TotalFiles * 100;
+            ProgressText = LocalizationService.Format("ScanProgress", p.FilesScanned, p.TotalFiles, Path.GetFileName(p.CurrentFile));
+        }
+        else if (p.IsRunning)
+        {
+            ProgressText = LocalizationService.Format("ScanProgressIndeterminate", p.FilesScanned, Path.GetFileName(p.CurrentFile));
+        }
+        ThreatsFound = p.ThreatsFound;
+        UpdateThreatsLabel();
     }
 
     [RelayCommand(CanExecute = nameof(CanScan))]
@@ -164,8 +174,10 @@ public partial class ScanViewModel : ViewModelBase
         {
             using (_services.Scanner.BeginBulkScanSession())
             {
-                var (results, filesScanned) = await scanFunc(_cts.Token);
-                PopulateResults(results);
+                var (results, filesScanned) = await scanFunc(_cts.Token).ConfigureAwait(true);
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                    () => PopulateResults(results),
+                    System.Windows.Threading.DispatcherPriority.Background);
                 ProgressText = results.Count > 0
                     ? LocalizationService.Format("ThreatCount", results.Count)
                     : LocalizationService.Get("ScanComplete");
@@ -173,7 +185,7 @@ public partial class ScanViewModel : ViewModelBase
                 _services.Settings.TotalThreatsFound += results.Sum(r =>
                     r.Threats.Count(t => t.Severity >= ThreatSeverity.High));
                 _services.Settings.LastScheduledScan = DateTime.Now;
-                SettingsService.Save(_services.Settings);
+                _ = Task.Run(() => SettingsService.Save(_services.Settings));
             }
         }
         catch (OperationCanceledException)
@@ -265,8 +277,10 @@ public partial class ScanViewModel : ViewModelBase
 
         try
         {
-            var results = await _services.Scanner.RunScanAsync(mode, _cts.Token);
-            PopulateResults(results);
+            var results = await _services.Scanner.RunScanAsync(mode, _cts.Token).ConfigureAwait(true);
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => PopulateResults(results),
+                System.Windows.Threading.DispatcherPriority.Background);
             ProgressText = LocalizationService.Get("ScanComplete");
         }
         catch (OperationCanceledException)

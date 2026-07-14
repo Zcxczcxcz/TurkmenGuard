@@ -47,8 +47,55 @@ public class AppSettings
         "\\GPUCache\\",
         "\\Code Cache\\",
         "\\Windows\\WinSxS\\",
-        "\\Windows\\Installer\\"
+        "\\Windows\\Installer\\",
+        "\\$Recycle.Bin\\",
+        "\\System Volume Information\\"
     ];
+
+    private static readonly string[] SkipDirectoryNames =
+    [
+        "$Recycle.Bin",
+        "System Volume Information",
+        "Recovery",
+        "Config.Msi"
+    ];
+
+    public bool ShouldSkipDirectory(string directoryPath)
+    {
+        if (string.IsNullOrWhiteSpace(directoryPath))
+            return true;
+
+        try
+        {
+            var name = Path.GetFileName(directoryPath.TrimEnd('\\', '/'));
+            if (SkipDirectoryNames.Any(n => name.Equals(n, StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+            var full = Path.GetFullPath(directoryPath).TrimEnd('\\') + "\\";
+
+            foreach (var folder in Exclusions.Folders)
+            {
+                if (string.IsNullOrWhiteSpace(folder))
+                    continue;
+
+                var excluded = Path.GetFullPath(folder).TrimEnd('\\') + "\\";
+                if (full.StartsWith(excluded, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            foreach (var fragment in SkipPathFragments)
+            {
+                if (full.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
+    }
 
     public bool IsExcluded(string filePath)
     {
