@@ -79,6 +79,12 @@ publish.bat
 
 ```powershell
 gh auth login
+powershell -ExecutionPolicy Bypass -File tools\push-github.ps1
+```
+
+Или вручную:
+
+```powershell
 gh repo create TurkmenGuard --public --source=. --remote=origin --push
 gh release create v4.5.0 dist\TurkmenGuard-v4.5.0-win-x64.zip --title "TurkmenGuard v4.5.0"
 ```
