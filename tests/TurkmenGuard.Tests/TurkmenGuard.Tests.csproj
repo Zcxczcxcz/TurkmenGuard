@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TurkmenGuard.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TurkmenGuard\TurkmenGuard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Rules\**\*" Link="Rules\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\Data\**\*"
+          Exclude="..\..\Data\clamav-download\**\*"
+          Link="Data\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\ThirdParty\ClamAV\**\*"
+          Exclude="..\..\ThirdParty\ClamAV\UserManual\**\*;..\..\ThirdParty\ClamAV\database\unpacked\**\*"
+          Link="ClamAV\%(RecursiveDir)%(Filename)%(Extension)"
+          Condition="Exists('..\..\ThirdParty\ClamAV\clamscan.exe')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,65 @@
+<Window x:Class="TurkmenGuard.Views.FirstRunLanguageWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Türkmen Goragçy"
+        Height="520" Width="480"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource BrandDarkBlueBrush}"
+        TextElement.Foreground="{StaticResource TextPrimaryBrush}"
+        FontFamily="{StaticResource AppFont}">
+    <Grid Margin="40">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,20,0,40">
+            <Border Width="72" Height="72" CornerRadius="16"
+                    Background="{StaticResource BrandGreenBrush}" Margin="0,0,0,16">
+                <TextBlock Text="TG" FontSize="28" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="White"/>
+            </Border>
+            <TextBlock x:Name="TitleBlock" FontSize="24" FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock x:Name="SubtitleBlock" FontSize="13" Margin="0,8,0,0"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" VerticalAlignment="Center">
+            <Button x:Name="BtnTk" Margin="0,0,0,12" Height="52"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    BorderBrush="{StaticResource BrandGreenBrush}"
+                    Click="OnLanguageClick" Tag="tk">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🇹🇲" FontSize="18" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="LblTk" FontSize="15"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="BtnRu" Margin="0,0,0,12" Height="52"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="OnLanguageClick" Tag="ru">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🇷🇺" FontSize="18" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="LblRu" FontSize="15"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="BtnEn" Height="52"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="OnLanguageClick" Tag="en">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🇬🇧" FontSize="18" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="LblEn" FontSize="15"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <TextBlock Grid.Row="2" x:Name="HintBlock" FontSize="11"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   HorizontalAlignment="Center" Margin="0,20,0,0"/>
+    </Grid>
+</Window>

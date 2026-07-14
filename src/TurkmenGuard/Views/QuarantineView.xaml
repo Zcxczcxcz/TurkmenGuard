@@ -1,0 +1,49 @@
+<UserControl x:Class="TurkmenGuard.Views.QuarantineView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Background="Transparent">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,16">
+            <Button DockPanel.Dock="Right" Command="{Binding RefreshCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Content="{Binding RefreshLabel}"/>
+            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </DockPanel>
+
+        <DataGrid x:Name="QuarantineGrid" ItemsSource="{Binding Entries}" AutoGenerateColumns="False"
+                  IsReadOnly="True" CanUserAddRows="False"
+                  Background="{StaticResource CardBackgroundBrush}"
+                  Foreground="{StaticResource TextPrimaryBrush}"
+                  RowBackground="{StaticResource CardBackgroundBrush}"
+                  AlternatingRowBackground="{StaticResource SidebarBackgroundBrush}"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="{Binding DataContext.ColFile, RelativeSource={RelativeSource AncestorType=UserControl}}" Binding="{Binding OriginalPath}" Width="*"/>
+                <DataGridTextColumn Header="{Binding DataContext.ColThreat, RelativeSource={RelativeSource AncestorType=UserControl}}" Binding="{Binding ThreatName}" Width="150"/>
+                <DataGridTextColumn Header="{Binding DataContext.ColMethod, RelativeSource={RelativeSource AncestorType=UserControl}}" Binding="{Binding DetectionMethod}" Width="80"/>
+                <DataGridTextColumn Header="{Binding DataContext.ColDate, RelativeSource={RelativeSource AncestorType=UserControl}}" Binding="{Binding QuarantinedAt, StringFormat=dd.MM.yyyy HH:mm}" Width="130"/>
+                <DataGridTemplateColumn Header="" Width="160">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="{Binding DataContext.RestoreLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Margin="0,0,4,0" Padding="8,2"
+                                        Style="{StaticResource MaterialDesignFlatButton}"/>
+                                <Button Content="{Binding DataContext.DeleteLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Padding="8,2"
+                                        Style="{StaticResource MaterialDesignFlatButton}"
+                                        Foreground="#C04848"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </StackPanel>
+</UserControl>

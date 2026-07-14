@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Türkmen Goragçy</value></data>
+  <data name="BrandSubtitle" xml:space="preserve"><value>Государственная антивирусная система</value></data>
+  <data name="Dashboard" xml:space="preserve"><value>Главная</value></data>
+  <data name="FilesScanned" xml:space="preserve"><value>Просканировано файлов</value></data>
+  <data name="ThreatsFound" xml:space="preserve"><value>Найдено угроз</value></data>
+  <data name="RealTime" xml:space="preserve"><value>Защита в реальном времени</value></data>
+  <data name="YaraStatus" xml:space="preserve"><value>Статус YARA</value></data>
+  <data name="Welcome" xml:space="preserve"><value>Добро пожаловать в Türkmen Goragçy!</value></data>
+  <data name="ProtectionEnabled" xml:space="preserve"><value>Защита включена</value></data>
+  <data name="ProtectionDisabled" xml:space="preserve"><value>Защита отключена</value></data>
+  <data name="YaraOk" xml:space="preserve"><value>Активен</value></data>
+  <data name="YaraFallback" xml:space="preserve"><value>Hash + Энтропия</value></data>
+  <data name="YaraActiveRules" xml:space="preserve"><value>{0} файлов правил</value></data>
+  <data name="NavDashboard" xml:space="preserve"><value>Главная</value></data>
+  <data name="NavScan" xml:space="preserve"><value>Сканирование</value></data>
+  <data name="NavRealTime" xml:space="preserve"><value>Защита</value></data>
+  <data name="NavQuarantine" xml:space="preserve"><value>Карантин</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Настройки</value></data>
+  <data name="SelectLanguage" xml:space="preserve"><value>Выберите язык</value></data>
+  <data name="SelectLanguageSubtitle" xml:space="preserve"><value>Язык интерфейса приложения</value></data>
+  <data name="LangTk" xml:space="preserve"><value>Türkmençe</value></data>
+  <data name="LangRu" xml:space="preserve"><value>Русский</value></data>
+  <data name="LangEn" xml:space="preserve"><value>English</value></data>
+  <data name="Version" xml:space="preserve"><value>Версия</value></data>
+  <data name="ExitConfirm" xml:space="preserve"><value>Выйти из приложения?</value></data>
+  <data name="Exit" xml:space="preserve"><value>Выход</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>TurkmenGuard уже запущен.</value></data>
+  <data name="ProtectionLayerStatus" xml:space="preserve"><value>Защита пользовательского режима</value></data>
+  <data name="Scanning" xml:space="preserve"><value>Сканирование...</value></data>
+  <data name="InQuarantine" xml:space="preserve"><value>В карантине</value></data>
+  <data name="SettingsSaved" xml:space="preserve"><value>Настройки сохранены</value></data>
+  <data name="QuickScan" xml:space="preserve"><value>Быстрое сканирование</value></data>
+  <data name="FullScan" xml:space="preserve"><value>Полное сканирование</value></data>
+  <data name="CustomScan" xml:space="preserve"><value>Выборочное сканирование</value></data>
+  <data name="SelectFolder" xml:space="preserve"><value>Выберите папку</value></data>
+  <data name="Start" xml:space="preserve"><value>Старт</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="ScanComplete" xml:space="preserve"><value>Сканирование завершено</value></data>
+  <data name="ScanCancelled" xml:space="preserve"><value>Сканирование отменено</value></data>
+  <data name="ScanProgress" xml:space="preserve"><value>{0}/{1} — {2}</value></data>
+  <data name="ThreatCount" xml:space="preserve"><value>Угроз: {0}</value></data>
+  <data name="RecentEvents" xml:space="preserve"><value>Последние события</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Обновить</value></data>
+  <data name="Restore" xml:space="preserve"><value>Восстановить</value></data>
+  <data name="Delete" xml:space="preserve"><value>Удалить</value></data>
+  <data name="ColFile" xml:space="preserve"><value>Файл</value></data>
+  <data name="ColThreat" xml:space="preserve"><value>Угроза</value></data>
+  <data name="ColMethod" xml:space="preserve"><value>Метод</value></data>
+  <data name="ColDate" xml:space="preserve"><value>Дата</value></data>
+  <data name="ConfirmRestore" xml:space="preserve"><value>Восстановить этот файл?</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>Удалить безвозвратно?</value></data>
+  <data name="Language" xml:space="preserve"><value>Язык</value></data>
+  <data name="AutoQuarantine" xml:space="preserve"><value>Авто-карантин</value></data>
+  <data name="AutoStart" xml:space="preserve"><value>Запуск с Windows</value></data>
+  <data name="SelfProtection" xml:space="preserve"><value>Самозащита</value></data>
+  <data name="Exclusions" xml:space="preserve"><value>Исключения</value></data>
+  <data name="ExcludedExtensions" xml:space="preserve"><value>Исключённые расширения (через запятую)</value></data>
+  <data name="ExcludedFolders" xml:space="preserve"><value>Исключённые папки (по одной на строку)</value></data>
+  <data name="MonitoredFolders" xml:space="preserve"><value>Мониторинг папок</value></data>
+  <data name="Save" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="Theme" xml:space="preserve"><value>Тема</value></data>
+  <data name="ScanSchedule" xml:space="preserve"><value>Плановое сканирование</value></data>
+  <data name="Notifications" xml:space="preserve"><value>Уведомления в трее</value></data>
+  <data name="ProcessMonitor" xml:space="preserve"><value>Мониторинг процессов</value></data>
+  <data name="ThreatDetected" xml:space="preserve"><value>Обнаружена угроза</value></data>
+  <data name="ScheduledScanDone" xml:space="preserve"><value>Плановое сканирование завершено. Угроз: {0}</value></data>
+  <data name="ThemeCorporate" xml:space="preserve"><value>Корпоративная (синий + зелёный)</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Тёмная</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Светлая</value></data>
+  <data name="ScheduleNever" xml:space="preserve"><value>Никогда</value></data>
+  <data name="ScheduleDaily" xml:space="preserve"><value>Ежедневно</value></data>
+  <data name="ScheduleWeekly" xml:space="preserve"><value>Еженедельно</value></data>
+  <data name="ScheduleMonthly" xml:space="preserve"><value>Ежемесячно</value></data>
+  <data name="ScanResults" xml:space="preserve"><value>Результаты сканирования</value></data>
+  <data name="QuarantineAction" xml:space="preserve"><value>В карантин</value></data>
+  <data name="InvalidFolder" xml:space="preserve"><value>Папка не найдена</value></data>
+  <data name="FileNotFound" xml:space="preserve"><value>Файл не найден</value></data>
+  <data name="Quarantined" xml:space="preserve"><value>Файл помещён в карантин</value></data>
+  <data name="RestoreFailed" xml:space="preserve"><value>Не удалось восстановить</value></data>
+  <data name="DeleteFailed" xml:space="preserve"><value>Не удалось удалить</value></data>
+  <data name="ScanProgressIndeterminate" xml:space="preserve"><value>{0} файлов — {1}</value></data>
+  <data name="ProcessMonitorActive" xml:space="preserve"><value>Мониторинг процессов: активен</value></data>
+  <data name="ProcessMonitorInactive" xml:space="preserve"><value>Мониторинг процессов: выключен</value></data>
+  <data name="FileScan" xml:space="preserve"><value>Сканирование файла</value></data>
+  <data name="SelectFile" xml:space="preserve"><value>Выберите файл</value></data>
+  <data name="InvalidFile" xml:space="preserve"><value>Файл не найден</value></data>
+  <data name="FileFilter" xml:space="preserve"><value>Все файлы (*.*)|*.*|Исполняемые (*.exe;*.dll)|*.exe;*.dll|Скрипты (*.ps1;*.bat;*.js)|*.ps1;*.bat;*.js</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Открыть</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Выход</value></data>
+  <data name="ViewLogs" xml:space="preserve"><value>Журнал приложения</value></data>
+  <data name="RefreshLogs" xml:space="preserve"><value>Обновить</value></data>
+  <data name="OpenLogsFolder" xml:space="preserve"><value>Открыть папку</value></data>
+  <data name="NoLogs" xml:space="preserve"><value>Записей за сегодня нет</value></data>
+  <data name="OpenLogsFailed" xml:space="preserve"><value>Не удалось открыть папку логов</value></data>
+  <data name="SignatureUpdates" xml:space="preserve"><value>Обновление сигнатур</value></data>
+  <data name="SignatureUpdatesEnabled" xml:space="preserve"><value>Включить обновление сигнатур</value></data>
+  <data name="UpdateSchedule" xml:space="preserve"><value>Расписание обновлений</value></data>
+  <data name="UpdateScheduleWeekly" xml:space="preserve"><value>Еженедельно (автоматически)</value></data>
+  <data name="UpdateScheduleManual" xml:space="preserve"><value>Только вручную</value></data>
+  <data name="UpdateEndpoint" xml:space="preserve"><value>URL сервера сигнатур</value></data>
+  <data name="CheckUpdatesOnStartup" xml:space="preserve"><value>Проверять при запуске</value></data>
+  <data name="UpdateNow" xml:space="preserve"><value>Обновить сейчас</value></data>
+  <data name="SignatureStatus" xml:space="preserve"><value>{0:N0} hash-сигнатур · версия {1} · обновлено: {2}</value></data>
+  <data name="UpdateChecking" xml:space="preserve"><value>Проверка обновлений...</value></data>
+  <data name="UpdateDownloading" xml:space="preserve"><value>Загрузка сигнатур...</value></data>
+  <data name="UpdateSuccess" xml:space="preserve"><value>Сигнатуры обновлены до {0}</value></data>
+  <data name="UpdateUpToDate" xml:space="preserve"><value>Сигнатуры актуальны</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>Ошибка обновления</value></data>
+  <data name="UpdateNotDue" xml:space="preserve"><value>Обновление пока не требуется</value></data>
+  <data name="UpdateInProgress" xml:space="preserve"><value>Обновление уже выполняется</value></data>
+  <data name="UpdatesDisabled" xml:space="preserve"><value>Обновление сигнатур отключено</value></data>
+  <data name="UpdateHashMismatch" xml:space="preserve"><value>Контрольная сумма базы не совпадает</value></data>
+  <data name="YaraActiveDetail" xml:space="preserve"><value>YARA активен — {0} файлов правил, {1} правил · {2:N0} hash-сигнатур</value></data>
+  <data name="YaraFallbackDetail" xml:space="preserve"><value>Hash + энтропия · {0:N0} hash-сигнатур</value></data>
+  <data name="ClamAvActiveDetail" xml:space="preserve"><value>ClamAV {0} — {1} БД · демон {2} · YARA {3} правил</value></data>
+  <data name="ClamAvFallbackDetail" xml:space="preserve"><value>ClamAV недоступен — hash {0:N0} сигн. · YARA {1} правил</value></data>
+  <data name="DaemonOn" xml:space="preserve"><value>вкл</value></data>
+  <data name="DaemonOff" xml:space="preserve"><value>выкл (clamscan)</value></data>
+  <data name="TrayStartupNotice" xml:space="preserve"><value>Защита работает в системном трее</value></data>
+  <data name="TamperDetected" xml:space="preserve"><value>Обнаружено вмешательство</value></data>
+  <data name="TamperDetectedDetail" xml:space="preserve"><value>Изменён защищённый ресурс: {0}</value></data>
+  <data name="TamperMissingFile" xml:space="preserve"><value>Защищённый файл отсутствует: {0}</value></data>
+  <data name="TamperModifiedFile" xml:space="preserve"><value>Защищённый файл изменён: {0}</value></data>
+  <data name="TamperRulesMissing" xml:space="preserve"><value>Правила YARA повреждены или отсутствуют</value></data>
+  <data name="TamperAutostartRestored" xml:space="preserve"><value>Запись автозапуска в реестре восстановлена</value></data>
+  <data name="SelfProtectionDetail" xml:space="preserve"><value>Мьютекс, мониторинг путей, проверка целостности, сторож реестра</value></data>
+</root>

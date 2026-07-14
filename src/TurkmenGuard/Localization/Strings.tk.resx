@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Türkmen Goragçy</value></data>
+  <data name="BrandSubtitle" xml:space="preserve"><value>Döwlet antivirus ulgamy</value></data>
+  <data name="Dashboard" xml:space="preserve"><value>Baş panel</value></data>
+  <data name="FilesScanned" xml:space="preserve"><value>Barlanan faýllar</value></data>
+  <data name="ThreatsFound" xml:space="preserve"><value>Tapylan howplar</value></data>
+  <data name="RealTime" xml:space="preserve"><value>Hakyky wagt goragçylygy</value></data>
+  <data name="YaraStatus" xml:space="preserve"><value>YARA ýagdaýy</value></data>
+  <data name="Welcome" xml:space="preserve"><value>Türkmen Goragçy programmasyna hoş geldiňiz!</value></data>
+  <data name="ProtectionEnabled" xml:space="preserve"><value>Goragçylyk işjeň</value></data>
+  <data name="ProtectionDisabled" xml:space="preserve"><value>Goragçylyk öçürilen</value></data>
+  <data name="YaraOk" xml:space="preserve"><value>Işjeň</value></data>
+  <data name="YaraFallback" xml:space="preserve"><value>Hash + Entropiýa</value></data>
+  <data name="YaraActiveRules" xml:space="preserve"><value>{0} düzgün faýly</value></data>
+  <data name="NavDashboard" xml:space="preserve"><value>Baş panel</value></data>
+  <data name="NavScan" xml:space="preserve"><value>Barlag</value></data>
+  <data name="NavRealTime" xml:space="preserve"><value>Goragçylyk</value></data>
+  <data name="NavQuarantine" xml:space="preserve"><value>Karantin</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Sazlamalar</value></data>
+  <data name="SelectLanguage" xml:space="preserve"><value>Dil saýlaň</value></data>
+  <data name="SelectLanguageSubtitle" xml:space="preserve"><value>Programmanyň interfeýs dili</value></data>
+  <data name="LangTk" xml:space="preserve"><value>Türkmençe</value></data>
+  <data name="LangRu" xml:space="preserve"><value>Русский</value></data>
+  <data name="LangEn" xml:space="preserve"><value>English</value></data>
+  <data name="Version" xml:space="preserve"><value>Wersiýa</value></data>
+  <data name="ExitConfirm" xml:space="preserve"><value>Programmadan çykmak isleýärsiňizmi?</value></data>
+  <data name="Exit" xml:space="preserve"><value>Çykmak</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>TurkmenGuard eýýäm işleýär.</value></data>
+  <data name="ProtectionLayerStatus" xml:space="preserve"><value>Ulanyjy re mode goragçylyk</value></data>
+  <data name="Scanning" xml:space="preserve"><value>Barlanýar...</value></data>
+  <data name="InQuarantine" xml:space="preserve"><value>Karantinde</value></data>
+  <data name="SettingsSaved" xml:space="preserve"><value>Sazlamalar ýatda saklandy</value></data>
+  <data name="QuickScan" xml:space="preserve"><value>Çalt barlag</value></data>
+  <data name="FullScan" xml:space="preserve"><value>Doly barlag</value></data>
+  <data name="CustomScan" xml:space="preserve"><value>Aýratyn barlag</value></data>
+  <data name="SelectFolder" xml:space="preserve"><value>Papka saýlaň</value></data>
+  <data name="Start" xml:space="preserve"><value>Başla</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Ýatyr</value></data>
+  <data name="ScanComplete" xml:space="preserve"><value>Barlag tamamlandy</value></data>
+  <data name="ScanCancelled" xml:space="preserve"><value>Barlag ýatyryldy</value></data>
+  <data name="ScanProgress" xml:space="preserve"><value>{0}/{1} — {2}</value></data>
+  <data name="ThreatCount" xml:space="preserve"><value>Howplar: {0}</value></data>
+  <data name="RecentEvents" xml:space="preserve"><value>Soňky wakalar</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Täzele</value></data>
+  <data name="Restore" xml:space="preserve"><value>Dikelt</value></data>
+  <data name="Delete" xml:space="preserve"><value>Poz</value></data>
+  <data name="ColFile" xml:space="preserve"><value>Faýl</value></data>
+  <data name="ColThreat" xml:space="preserve"><value>Howp</value></data>
+  <data name="ColMethod" xml:space="preserve"><value>Usul</value></data>
+  <data name="ColDate" xml:space="preserve"><value>Sene</value></data>
+  <data name="ConfirmRestore" xml:space="preserve"><value>Faýly dikeltmek isleýärsiňizmi?</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>Hemişelik pozmak isleýärsiňizmi?</value></data>
+  <data name="Language" xml:space="preserve"><value>Dil</value></data>
+  <data name="AutoQuarantine" xml:space="preserve"><value>Awtomatik karantin</value></data>
+  <data name="AutoStart" xml:space="preserve"><value>Windows bilen başlat</value></data>
+  <data name="SelfProtection" xml:space="preserve"><value>Öz-özüni goramak</value></data>
+  <data name="Exclusions" xml:space="preserve"><value>Hasap edilmeýänler</value></data>
+  <data name="ExcludedExtensions" xml:space="preserve"><value>Hasap edilmeýän giňeltmeler (otur)</value></data>
+  <data name="ExcludedFolders" xml:space="preserve"><value>Hasap edilmeýän papkalar (setir başyna)</value></data>
+  <data name="MonitoredFolders" xml:space="preserve"><value>Gözegçilik edilýän papkalar</value></data>
+  <data name="Save" xml:space="preserve"><value>Ýatda sakla</value></data>
+  <data name="Theme" xml:space="preserve"><value>Tema</value></data>
+  <data name="ScanSchedule" xml:space="preserve"><value>Meýilleşdirilen barlag</value></data>
+  <data name="Notifications" xml:space="preserve"><value>Duýduryş habarlary</value></data>
+  <data name="ProcessMonitor" xml:space="preserve"><value>Proses gözegçiligi</value></data>
+  <data name="ThreatDetected" xml:space="preserve"><value>Howp tapyldy</value></data>
+  <data name="ScheduledScanDone" xml:space="preserve"><value>Meýilleşdirilen barlag tamamlandy. Howplar: {0}</value></data>
+  <data name="ThemeCorporate" xml:space="preserve"><value>Korporatiw (gök + ýaşyl)</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Garaňky</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Ýagty</value></data>
+  <data name="ScheduleNever" xml:space="preserve"><value>Hemişe däl</value></data>
+  <data name="ScheduleDaily" xml:space="preserve"><value>Gündelik</value></data>
+  <data name="ScheduleWeekly" xml:space="preserve"><value>Hepdelik</value></data>
+  <data name="ScheduleMonthly" xml:space="preserve"><value>Aýlyk</value></data>
+  <data name="ScanResults" xml:space="preserve"><value>Barlag netijeleri</value></data>
+  <data name="QuarantineAction" xml:space="preserve"><value>Karantin</value></data>
+  <data name="InvalidFolder" xml:space="preserve"><value>Papka tapylmady</value></data>
+  <data name="FileNotFound" xml:space="preserve"><value>Faýl tapylmady</value></data>
+  <data name="Quarantined" xml:space="preserve"><value>Faýl karantine geçirildi</value></data>
+  <data name="RestoreFailed" xml:space="preserve"><value>Dikeltmek şowsuz</value></data>
+  <data name="DeleteFailed" xml:space="preserve"><value>Pozmak şowsuz</value></data>
+  <data name="ScanProgressIndeterminate" xml:space="preserve"><value>{0} faýl — {1}</value></data>
+  <data name="ProcessMonitorActive" xml:space="preserve"><value>Proses gözegçiligi: işjeň</value></data>
+  <data name="ProcessMonitorInactive" xml:space="preserve"><value>Proses gözegçiligi: öçürilen</value></data>
+  <data name="FileScan" xml:space="preserve"><value>Faýl barlagy</value></data>
+  <data name="SelectFile" xml:space="preserve"><value>Faýl saýlaň</value></data>
+  <data name="InvalidFile" xml:space="preserve"><value>Faýl tapylmady</value></data>
+  <data name="FileFilter" xml:space="preserve"><value>Ähli faýllar (*.*)|*.*|Programmalar (*.exe;*.dll)|*.exe;*.dll|Skriptler (*.ps1;*.bat;*.js)|*.ps1;*.bat;*.js</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Aç</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Çykmak</value></data>
+  <data name="ViewLogs" xml:space="preserve"><value>Programma žurnaly</value></data>
+  <data name="RefreshLogs" xml:space="preserve"><value>Täzele</value></data>
+  <data name="OpenLogsFolder" xml:space="preserve"><value>Papkany aç</value></data>
+  <data name="NoLogs" xml:space="preserve"><value>Şu gün üçin ýazgylar ýok</value></data>
+  <data name="OpenLogsFailed" xml:space="preserve"><value>Žurnal papkasyny açyp bolmady</value></data>
+  <data name="SignatureUpdates" xml:space="preserve"><value>Signatura täzelenmeleri</value></data>
+  <data name="SignatureUpdatesEnabled" xml:space="preserve"><value>Signatura täzelenmelerini aç</value></data>
+  <data name="UpdateSchedule" xml:space="preserve"><value>Täzelenme tertibi</value></data>
+  <data name="UpdateScheduleWeekly" xml:space="preserve"><value>Hepdelik (awtomatik)</value></data>
+  <data name="UpdateScheduleManual" xml:space="preserve"><value>Diňe el bilen</value></data>
+  <data name="UpdateEndpoint" xml:space="preserve"><value>Signatura serweri URL</value></data>
+  <data name="CheckUpdatesOnStartup" xml:space="preserve"><value>Başlangyçda barla</value></data>
+  <data name="UpdateNow" xml:space="preserve"><value>Häzir täzele</value></data>
+  <data name="SignatureStatus" xml:space="preserve"><value>{0:N0} hash signatura · wersiýa {1} · soňky täzelenme: {2}</value></data>
+  <data name="UpdateChecking" xml:space="preserve"><value>Täzelenmeler barlanýar...</value></data>
+  <data name="UpdateDownloading" xml:space="preserve"><value>Signaturalar göçürilýär...</value></data>
+  <data name="UpdateSuccess" xml:space="preserve"><value>Signaturalar {0} wersiýasyna täzelendi</value></data>
+  <data name="UpdateUpToDate" xml:space="preserve"><value>Signaturalar täze</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>Täzelenme şowsuz</value></data>
+  <data name="UpdateNotDue" xml:space="preserve"><value>Täzelenme entek gerek däl</value></data>
+  <data name="UpdateInProgress" xml:space="preserve"><value>Täzelenme dowam edýär</value></data>
+  <data name="UpdatesDisabled" xml:space="preserve"><value>Signatura täzelenmeleri öçürilen</value></data>
+  <data name="UpdateHashMismatch" xml:space="preserve"><value>Göçürilen maglumat bazasynyň checksum-y gabat gelmeýär</value></data>
+  <data name="YaraActiveDetail" xml:space="preserve"><value>YARA işjeň — {0} düzgün faýly, {1} düzgün · {2:N0} hash signatura</value></data>
+  <data name="YaraFallbackDetail" xml:space="preserve"><value>Hash + entropiýa · {0:N0} hash signatura</value></data>
+  <data name="ClamAvActiveDetail" xml:space="preserve"><value>ClamAV {0} — {1} DB · daemon {2} · YARA {3} düzgün</value></data>
+  <data name="ClamAvFallbackDetail" xml:space="preserve"><value>ClamAV elýeterli däl — hash {0:N0} sign. · YARA {1} düzgün</value></data>
+  <data name="DaemonOn" xml:space="preserve"><value>açyk</value></data>
+  <data name="DaemonOff" xml:space="preserve"><value>ýapyk (clamscan)</value></data>
+  <data name="TrayStartupNotice" xml:space="preserve"><value>Goragçy system treýinde işleýär</value></data>
+  <data name="TamperDetected" xml:space="preserve"><value>Göwrümlilik anyklandy</value></data>
+  <data name="TamperDetectedDetail" xml:space="preserve"><value>Goragly resurs üýtgedildi: {0}</value></data>
+  <data name="TamperMissingFile" xml:space="preserve"><value>Goragly faýl ýok: {0}</value></data>
+  <data name="TamperModifiedFile" xml:space="preserve"><value>Goragly faýl üýtgedildi: {0}</value></data>
+  <data name="TamperRulesMissing" xml:space="preserve"><value>YARA düzgünleri zaýalanan ýa-da ýok</value></data>
+  <data name="TamperAutostartRestored" xml:space="preserve"><value>Awtostart ýazgysy dikeldildi</value></data>
+  <data name="SelfProtectionDetail" xml:space="preserve"><value>Mutex, ýol gözegçiligi, bitewilik barlagy, registry gözegçisi</value></data>
+</root>

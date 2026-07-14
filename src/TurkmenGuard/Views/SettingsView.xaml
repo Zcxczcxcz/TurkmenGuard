@@ -1,0 +1,118 @@
+<UserControl x:Class="TurkmenGuard.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Background="Transparent">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="640">
+            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,24"/>
+
+            <materialDesign:Card Padding="20" Margin="0,0,0,12"
+                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                <StackPanel>
+                    <TextBlock Text="{Binding LanguageLabel}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding LanguageOptions}"
+                              SelectedItem="{Binding SelectedLanguageOption}"
+                              DisplayMemberPath="Label" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding ThemeLabel}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding ThemeOptions}"
+                              SelectedItem="{Binding SelectedThemeOption}"
+                              DisplayMemberPath="Label"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <materialDesign:Card Padding="20" Margin="0,0,0,12"
+                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                <StackPanel>
+                    <TextBlock Text="{Binding ScheduleLabel}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding ScheduleOptions}"
+                              SelectedItem="{Binding SelectedScheduleOption}"
+                              DisplayMemberPath="Label" Margin="0,0,0,12"/>
+                    <CheckBox Content="{Binding AutoQuarantineLabel}" IsChecked="{Binding AutoQuarantine}" Margin="0,0,0,8"/>
+                    <CheckBox Content="{Binding AutoStartLabel}" IsChecked="{Binding AutoStart}" Margin="0,0,0,8"/>
+                    <CheckBox Content="{Binding SelfProtectionLabel}" IsChecked="{Binding SelfProtection}" Margin="0,0,0,8"/>
+                    <CheckBox Content="{Binding NotificationsLabel}" IsChecked="{Binding NotificationsEnabled}" Margin="0,0,0,8"/>
+                    <CheckBox Content="{Binding ProcessMonitorLabel}" IsChecked="{Binding ProcessMonitorEnabled}"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <materialDesign:Card Padding="20" Margin="0,0,0,12"
+                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                <StackPanel>
+                    <TextBlock Text="{Binding SignatureUpdatesLabel}" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                    <CheckBox Content="{Binding SignatureUpdatesEnabledLabel}" IsChecked="{Binding SignatureUpdatesEnabled}" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding UpdateScheduleLabel}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding UpdateScheduleOptions}"
+                              SelectedItem="{Binding SelectedUpdateScheduleOption}"
+                              DisplayMemberPath="Label" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding UpdateEndpointLabel}" FontSize="11"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding SignatureEndpoint}" Margin="0,0,0,12"/>
+                    <CheckBox Content="{Binding CheckUpdatesOnStartupLabel}" IsChecked="{Binding CheckUpdatesOnStartup}" Margin="0,0,0,12"/>
+                    <Button Command="{Binding UpdateSignaturesCommand}" HorizontalAlignment="Left"
+                            Style="{StaticResource TgPrimaryButton}" Content="{Binding UpdateNowLabel}" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding SignatureStatus}" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <materialDesign:Card Padding="20" Margin="0,0,0,12"
+                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                <StackPanel>
+                    <TextBlock Text="{Binding ExclusionsLabel}" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding ExtensionsLabel}" FontSize="11"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding ExcludedExtensions}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding FoldersLabel}" FontSize="11"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding ExcludedFolders}" AcceptsReturn="True" Height="60"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <materialDesign:Card Padding="20" Margin="0,0,0,12"
+                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                <StackPanel>
+                    <TextBlock Text="{Binding MonitoredFoldersLabel}" Margin="0,0,0,8"/>
+                    <TextBox Text="{Binding MonitoredFolders}" AcceptsReturn="True" Height="80"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <materialDesign:Card Padding="20" Margin="0,0,0,12"
+                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Command="{Binding RefreshLogsCommand}" Margin="0,0,8,0"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Content="{Binding RefreshLogsLabel}"/>
+                            <Button Command="{Binding OpenLogsFolderCommand}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Content="{Binding OpenLogsFolderLabel}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LogsLabel}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBox Text="{Binding LogContent}" IsReadOnly="True"
+                             AcceptsReturn="True" TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto" Height="180"
+                             FontFamily="Consolas" FontSize="11"
+                             Background="Transparent"
+                             Foreground="{StaticResource TextSecondaryBrush}"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource BrandGreenBrush}" Margin="0,0,0,12"/>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding SaveCommand}" Margin="0,0,8,0" Height="40"
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Background="{StaticResource BrandGreenBrush}"
+                        Content="{Binding SaveLabel}"/>
+                <Button Command="{Binding ExitCommand}" Height="40"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        BorderBrush="#C04848" Foreground="#C04848"
+                        Content="{Binding ExitLabel}"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Türkmen Goragçy</value></data>
+  <data name="BrandSubtitle" xml:space="preserve"><value>State antivirus system</value></data>
+  <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="FilesScanned" xml:space="preserve"><value>Files scanned</value></data>
+  <data name="ThreatsFound" xml:space="preserve"><value>Threats found</value></data>
+  <data name="RealTime" xml:space="preserve"><value>Real-time Protection</value></data>
+  <data name="YaraStatus" xml:space="preserve"><value>YARA status</value></data>
+  <data name="Welcome" xml:space="preserve"><value>Welcome to Türkmen Goragçy!</value></data>
+  <data name="ProtectionEnabled" xml:space="preserve"><value>Protection enabled</value></data>
+  <data name="ProtectionDisabled" xml:space="preserve"><value>Protection disabled</value></data>
+  <data name="YaraOk" xml:space="preserve"><value>Active</value></data>
+  <data name="YaraFallback" xml:space="preserve"><value>Hash + Entropy</value></data>
+  <data name="YaraActiveRules" xml:space="preserve"><value>{0} rule files</value></data>
+  <data name="NavDashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="NavScan" xml:space="preserve"><value>Scan</value></data>
+  <data name="NavRealTime" xml:space="preserve"><value>Protection</value></data>
+  <data name="NavQuarantine" xml:space="preserve"><value>Quarantine</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="SelectLanguage" xml:space="preserve"><value>Select language</value></data>
+  <data name="SelectLanguageSubtitle" xml:space="preserve"><value>Application interface language</value></data>
+  <data name="LangTk" xml:space="preserve"><value>Türkmençe</value></data>
+  <data name="LangRu" xml:space="preserve"><value>Русский</value></data>
+  <data name="LangEn" xml:space="preserve"><value>English</value></data>
+  <data name="Version" xml:space="preserve"><value>Version</value></data>
+  <data name="ExitConfirm" xml:space="preserve"><value>Exit the application?</value></data>
+  <data name="Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>TurkmenGuard is already running.</value></data>
+  <data name="ProtectionLayerStatus" xml:space="preserve"><value>User-mode protection</value></data>
+  <data name="Scanning" xml:space="preserve"><value>Scanning...</value></data>
+  <data name="InQuarantine" xml:space="preserve"><value>In quarantine</value></data>
+  <data name="SettingsSaved" xml:space="preserve"><value>Settings saved</value></data>
+  <data name="QuickScan" xml:space="preserve"><value>Quick Scan</value></data>
+  <data name="FullScan" xml:space="preserve"><value>Full Scan</value></data>
+  <data name="CustomScan" xml:space="preserve"><value>Custom Scan</value></data>
+  <data name="SelectFolder" xml:space="preserve"><value>Select folder</value></data>
+  <data name="Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="ScanComplete" xml:space="preserve"><value>Scan complete</value></data>
+  <data name="ScanCancelled" xml:space="preserve"><value>Scan cancelled</value></data>
+  <data name="ScanProgress" xml:space="preserve"><value>{0}/{1} — {2}</value></data>
+  <data name="ThreatCount" xml:space="preserve"><value>Threats: {0}</value></data>
+  <data name="RecentEvents" xml:space="preserve"><value>Recent events</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="ColFile" xml:space="preserve"><value>File</value></data>
+  <data name="ColThreat" xml:space="preserve"><value>Threat</value></data>
+  <data name="ColMethod" xml:space="preserve"><value>Method</value></data>
+  <data name="ColDate" xml:space="preserve"><value>Date</value></data>
+  <data name="ConfirmRestore" xml:space="preserve"><value>Restore this file?</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>Delete permanently?</value></data>
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="AutoQuarantine" xml:space="preserve"><value>Auto quarantine</value></data>
+  <data name="AutoStart" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="SelfProtection" xml:space="preserve"><value>Self-protection</value></data>
+  <data name="Exclusions" xml:space="preserve"><value>Exclusions</value></data>
+  <data name="ExcludedExtensions" xml:space="preserve"><value>Excluded extensions (comma-separated)</value></data>
+  <data name="ExcludedFolders" xml:space="preserve"><value>Excluded folders (one per line)</value></data>
+  <data name="MonitoredFolders" xml:space="preserve"><value>Monitored folders (one per line)</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="ScanSchedule" xml:space="preserve"><value>Scheduled scan</value></data>
+  <data name="Notifications" xml:space="preserve"><value>Tray notifications</value></data>
+  <data name="ProcessMonitor" xml:space="preserve"><value>Process monitor</value></data>
+  <data name="ThreatDetected" xml:space="preserve"><value>Threat detected</value></data>
+  <data name="ScheduledScanDone" xml:space="preserve"><value>Scheduled scan complete. Threats: {0}</value></data>
+  <data name="ThemeCorporate" xml:space="preserve"><value>Corporate (blue + green)</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="ScheduleNever" xml:space="preserve"><value>Never</value></data>
+  <data name="ScheduleDaily" xml:space="preserve"><value>Daily</value></data>
+  <data name="ScheduleWeekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="ScheduleMonthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="ScanResults" xml:space="preserve"><value>Scan results</value></data>
+  <data name="QuarantineAction" xml:space="preserve"><value>Quarantine</value></data>
+  <data name="InvalidFolder" xml:space="preserve"><value>Folder not found</value></data>
+  <data name="FileNotFound" xml:space="preserve"><value>File not found</value></data>
+  <data name="Quarantined" xml:space="preserve"><value>File quarantined</value></data>
+  <data name="RestoreFailed" xml:space="preserve"><value>Restore failed</value></data>
+  <data name="DeleteFailed" xml:space="preserve"><value>Delete failed</value></data>
+  <data name="ScanProgressIndeterminate" xml:space="preserve"><value>{0} files — {1}</value></data>
+  <data name="ProcessMonitorActive" xml:space="preserve"><value>Process monitor: active</value></data>
+  <data name="ProcessMonitorInactive" xml:space="preserve"><value>Process monitor: inactive</value></data>
+  <data name="FileScan" xml:space="preserve"><value>File Scan</value></data>
+  <data name="SelectFile" xml:space="preserve"><value>Select file</value></data>
+  <data name="InvalidFile" xml:space="preserve"><value>File not found</value></data>
+  <data name="FileFilter" xml:space="preserve"><value>All files (*.*)|*.*|Executables (*.exe;*.dll)|*.exe;*.dll|Scripts (*.ps1;*.bat;*.js)|*.ps1;*.bat;*.js</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Exit</value></data>
+  <data name="ViewLogs" xml:space="preserve"><value>Application logs</value></data>
+  <data name="RefreshLogs" xml:space="preserve"><value>Refresh</value></data>
+  <data name="OpenLogsFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="NoLogs" xml:space="preserve"><value>No log entries for today</value></data>
+  <data name="OpenLogsFailed" xml:space="preserve"><value>Could not open logs folder</value></data>
+  <data name="SignatureUpdates" xml:space="preserve"><value>Signature updates</value></data>
+  <data name="SignatureUpdatesEnabled" xml:space="preserve"><value>Enable signature updates</value></data>
+  <data name="UpdateSchedule" xml:space="preserve"><value>Update schedule</value></data>
+  <data name="UpdateScheduleWeekly" xml:space="preserve"><value>Weekly (automatic)</value></data>
+  <data name="UpdateScheduleManual" xml:space="preserve"><value>Manual only</value></data>
+  <data name="UpdateEndpoint" xml:space="preserve"><value>Signature server URL</value></data>
+  <data name="CheckUpdatesOnStartup" xml:space="preserve"><value>Check for updates on startup</value></data>
+  <data name="UpdateNow" xml:space="preserve"><value>Update now</value></data>
+  <data name="SignatureStatus" xml:space="preserve"><value>{0:N0} hash signatures · version {1} · last update: {2}</value></data>
+  <data name="UpdateChecking" xml:space="preserve"><value>Checking for updates...</value></data>
+  <data name="UpdateDownloading" xml:space="preserve"><value>Downloading signatures...</value></data>
+  <data name="UpdateSuccess" xml:space="preserve"><value>Signatures updated to {0}</value></data>
+  <data name="UpdateUpToDate" xml:space="preserve"><value>Signatures are up to date</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>Update failed</value></data>
+  <data name="UpdateNotDue" xml:space="preserve"><value>Update not required yet</value></data>
+  <data name="UpdateInProgress" xml:space="preserve"><value>Update already in progress</value></data>
+  <data name="UpdatesDisabled" xml:space="preserve"><value>Signature updates are disabled</value></data>
+  <data name="UpdateHashMismatch" xml:space="preserve"><value>Downloaded database checksum mismatch</value></data>
+  <data name="YaraActiveDetail" xml:space="preserve"><value>YARA active — {0} rule files, {1} rules · {2:N0} hash signatures</value></data>
+  <data name="YaraFallbackDetail" xml:space="preserve"><value>Hash + entropy mode · {0:N0} hash signatures</value></data>
+  <data name="ClamAvActiveDetail" xml:space="preserve"><value>ClamAV {0} — {1} DB files · daemon {2} · YARA {3} rules</value></data>
+  <data name="ClamAvFallbackDetail" xml:space="preserve"><value>ClamAV unavailable — hash fallback {0:N0} sigs · YARA {1} rules</value></data>
+  <data name="DaemonOn" xml:space="preserve"><value>on</value></data>
+  <data name="DaemonOff" xml:space="preserve"><value>off (clamscan)</value></data>
+  <data name="TrayStartupNotice" xml:space="preserve"><value>Protection is running in the system tray</value></data>
+  <data name="TamperDetected" xml:space="preserve"><value>Tamper detected</value></data>
+  <data name="TamperDetectedDetail" xml:space="preserve"><value>Protected resource changed: {0}</value></data>
+  <data name="TamperMissingFile" xml:space="preserve"><value>Protected file missing: {0}</value></data>
+  <data name="TamperModifiedFile" xml:space="preserve"><value>Protected file modified: {0}</value></data>
+  <data name="TamperRulesMissing" xml:space="preserve"><value>YARA rules appear damaged or missing</value></data>
+  <data name="TamperAutostartRestored" xml:space="preserve"><value>Autostart registry entry was restored</value></data>
+  <data name="SelfProtectionDetail" xml:space="preserve"><value>Mutex, path watch, integrity check, registry watchdog</value></data>
+</root>
