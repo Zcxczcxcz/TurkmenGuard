@@ -1,5 +1,8 @@
 # TurkmenGuard (Türkmen Goragçy) v4.5.0
 
+**Репозиторий:** https://github.com/Zcxczcxcz/TurkmenGuard  
+**Для разработчиков:** [docs/DEVELOPERS.md](docs/DEVELOPERS.md) · **Backend API:** [backend/README.md](backend/README.md)
+
 **Автономный антивирус для Windows 7 SP1+ / 10 / 11 (x64)**  
 Офлайн-сканирование локально. Сеть — **только** для обновления сигнатур (раз в неделю или вручную).
 
@@ -61,35 +64,25 @@ powershell -ExecutionPolicy Bypass -File tools\reset-user-settings.ps1
 
 **Не копируется:** `UserManual/`, `database/unpacked/`, `clamav-download/` (экономия ~3+ ГБ).
 
-### Git — исходники и релиз
-
-**В репозитории:** исходный код, YARA rules, `Data/hash-signatures.db`, скрипты.  
-**Не в git:** `dist/`, `ThirdParty/ClamAV/` (скачивается `setup-clamav.ps1`).
+### Git — клонирование (всё для работы уже в репозитории)
 
 ```powershell
-# Клонирование
-git clone https://github.com/<user>/TurkmenGuard.git
+git clone https://github.com/Zcxczcxcz/TurkmenGuard.git
 cd TurkmenGuard
-powershell -ExecutionPolicy Bypass -File tools\setup-clamav.ps1
 dotnet build TurkmenGuard.sln -c Release
-publish.bat
+start.bat
 ```
 
-**Публикация на GitHub (для разработчика):**
+| В репозитории | Назначение |
+|---------------|------------|
+| `ThirdParty/ClamAV/` | Движок ClamAV 1.5.3 + CVD сигнатуры |
+| `Data/hash-signatures.db` | Hash SQLite fallback (~540k) |
+| `Rules/` | 23 YARA правила |
+| `backend/` | Спецификация API для backend-команды |
 
-```powershell
-gh auth login
-powershell -ExecutionPolicy Bypass -File tools\push-github.ps1
-```
+`tools/setup-clamav.ps1` — только если папка ClamAV повреждена.
 
-Или вручную:
-
-```powershell
-gh repo create TurkmenGuard --public --source=. --remote=origin --push
-gh release create v4.5.0 dist\TurkmenGuard-v4.5.0-win-x64.zip --title "TurkmenGuard v4.5.0"
-```
-
-ClamAV (~400 МБ) скачивается скриптом `setup-clamav.ps1`, не хранится в git.
+**Доступ для команды:** владелец добавляет collaborators в GitHub → Settings → Collaborators (см. [docs/DEVELOPERS.md](docs/DEVELOPERS.md)).
 
 ---
 
@@ -363,7 +356,9 @@ TurkmenGuard/
 │   ├── build-hash-db.ps1         # JSON → SQLite (dev)
 │   └── capture.py
 ├── ThirdParty/
-│   └── ClamAV/                   # Portable engine (не в git, setup script)
+│   └── ClamAV/                   # Portable ClamAV 1.5.3 + CVD (в git)
+├── docs/
+│   └── DEVELOPERS.md             # Онбординг для команды
 ├── src/TurkmenGuard/
 │   ├── Core/
 │   │   ├── ScannerEngine.cs
@@ -424,15 +419,18 @@ TurkmenGuard/
 
 ## История изменений (Changelog)
 
-### v4.5.0 (2026-07-14) — деплой
-- **publish.bat** + `tools/publish-release.ps1` — дистрибутив ~1.1 ГБ (без unpacked/UserManual)
+### v4.5.0 (2026-07-14) — деплой + GitHub
+- **GitHub:** https://github.com/Zcxczcxcz/TurkmenGuard — ClamAV engine + CVD + hash DB + YARA в репозитории
+- **docs/DEVELOPERS.md** — онбординг для frontend/backend команды
+- **backend/README.md** — спецификация API сигнатур
+- **publish.bat** + `tools/publish-release.ps1` — дистрибутив ~1.1 ГБ
 - **DetectionFilter v2** — PUA/PUP/Adware → Info, Quick/Full/RealTime только **High+**
 - Исключения: `node_modules`, `.git`, WinSxS, AppData\Local\Programs
 - Счётчики сброшены, defaults: RealTime/ProcessMonitor/AutoQuarantine **off**
 - `tools/reset-user-settings.ps1` — сброс `%AppData%\TurkmenGuard\settings.json`
 - csproj: не копировать `unpacked/`, `UserManual/`, `clamav-download/`
-- `.gitignore`: весь `dist/`, ClamAV zip; git-репозиторий для исходников
-- **SelfProtectionService** — без NRE в headless-тестах (нет WPF Application)
+- `.gitignore`: `dist/`, pdb/lib ClamAV; runtime engine в git
+- **SelfProtectionService** — без NRE в headless-тестах
 
 ### v4.4.1 (2026-07-14) — ложные срабатывания, стоп, темы
 - **DetectionFilter** — в Quick/Full скане скрыты PUA/PUP/Heuristics, entropy и Medium; только High+

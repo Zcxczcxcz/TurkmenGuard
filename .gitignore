@@ -4,20 +4,16 @@
 **/samples/
 dist/
 
-# ClamAV large/temp files (run tools/setup-clamav.ps1 after clone)
+# ClamAV — runtime engine IS tracked in git; exclude bloat only
 ThirdParty/clamav-*.zip
 ThirdParty/clamav-*.zip.part
 ThirdParty/_clam_extract/
 ThirdParty/ClamAV/UserManual/
 ThirdParty/ClamAV/database/unpacked/
+ThirdParty/ClamAV/**/*.pdb
+ThirdParty/ClamAV/**/*.lib
 Data/clamav-download/
 **/database/unpacked/
-
-# ClamAV engine — optional in git (setup script downloads); uncomment to track locally:
-ThirdParty/ClamAV/
-
-# Large hash DB — rebuild with tools/build-hash-db.ps1 or ship in release zip only
-# Data/hash-signatures.db
 
 # IDE / OS
 .vs/
