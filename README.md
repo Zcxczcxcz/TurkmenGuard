@@ -42,8 +42,8 @@ publish.bat
 ```
 
 Результат:
-- `dist/TurkmenGuard-v4.5.0/` — готовая папка для пользователя
-- `dist/TurkmenGuard-v4.5.0-win-x64.zip` — архив для отправки (не коммитится в git)
+- `dist/TurkmenGuard-v4.5.2/` — готовая папка для пользователя
+- `dist/TurkmenGuard-v4.5.2-win-x64.zip` — архив для отправки (не коммитится в git)
 
 > Основной объём — ClamAV engine + CVD (~400 МБ) и `hash-signatures.db` (~95 МБ). Папка `dist/` в `.gitignore`.
 

@@ -2,7 +2,7 @@
 param(
     [string]$Owner = "Zcxczcxcz",
     [string]$RepoName = "TurkmenGuard",
-    [string]$Version = "4.5.0",
+    [string]$Version = "4.5.2",
     [switch]$Private
 )
 

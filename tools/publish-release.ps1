@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 param(
     [string]$Root = (Split-Path -Parent $PSScriptRoot),
-    [string]$Version = "4.5.0"
+    [string]$Version = "4.5.2"
 )
 
 $ErrorActionPreference = "Stop"
