@@ -4,7 +4,7 @@ using TurkmenGuard.Security;
 using TurkmenGuard.Services;
 
 Console.WriteLine("╔══════════════════════════════════════════════╗");
-Console.WriteLine("║   TurkmenGuard v4.4 — Final Integration Tests║");
+Console.WriteLine("║   TurkmenGuard v4.7.2 — Integration Tests    ║");
 Console.WriteLine("╚══════════════════════════════════════════════╝\n");
 
 var passed = 0;
@@ -66,6 +66,18 @@ WriteSample(cleanFile, "This is a clean test file for TurkmenGuard.");
 var cleanResult = await scanner.ScanFileAsync(cleanFile);
 Assert("Clean file not flagged", !cleanResult.IsThreat);
 
+var quickDir = Path.Combine(samplesDir, "quick_batch");
+Directory.CreateDirectory(quickDir);
+for (var i = 0; i < 5; i++)
+{
+    var content = i == 0 ? "TURKMENGUARD_TEST_VIRUS_2026" : $"clean file {i}";
+    WriteSample(Path.Combine(quickDir, $"sample_{i}.js"), content);
+}
+var quickProgress = new ScanProgress();
+var quickResults = await scanner.ScanDirectoryAsync(quickDir, ScanMode.Quick, quickProgress);
+Assert("Quick batch scan finds threat", quickResults.Any(r => r.IsThreat));
+Assert("Quick batch scan counts files", quickProgress.FilesScanned >= 5);
+
 var testMalware = Path.Combine(samplesDir, "test_virus.js");
 WriteSample(testMalware, "TURKMENGUARD_TEST_VIRUS_2026");
 var malwareResult = await scanner.ScanFileAsync(testMalware);
@@ -77,9 +89,39 @@ var credResult = await scanner.ScanFileAsync(credTheft);
 Assert("Credential theft YARA rule", credResult.IsThreat);
 
 var amsiBypass = Path.Combine(samplesDir, "amsi_test.ps1");
-WriteSample(amsiBypass, "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils') amsiContext");
+WriteSample(amsiBypass,
+    "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiContext').SetValue($null,$true)");
 var amsiResult = await scanner.ScanFileAsync(amsiBypass);
 Assert("AMSI bypass YARA rule", amsiResult.IsThreat);
+
+// Large-file structural path: >8 MB payload with marker in the tail (avoids Defender eating .exe)
+var largePath = Path.Combine(samplesDir, "large_dropper.dat");
+try
+{
+    using (var fs = File.Create(largePath))
+    {
+        var head = System.Text.Encoding.ASCII.GetBytes("PAD");
+        fs.Write(head, 0, head.Length);
+        fs.SetLength(9L * 1024 * 1024); // > LargeFileThreshold
+        fs.Position = 9L * 1024 * 1024 - 64;
+        var marker = System.Text.Encoding.ASCII.GetBytes("TURKMENGUARD_TEST_VIRUS_2026");
+        fs.Write(marker, 0, marker.Length);
+    }
+
+    var regions = LargeFileScanner.ExtractRegions(largePath, ScanMode.SingleFile);
+    Assert("Large file extracts edge regions", regions.Count >= 2);
+
+    var largeResult = await scanner.ScanFileAsync(largePath);
+    Assert("Large file structural scan detects overlay marker", largeResult.IsThreat);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[SKIP] Large file test: {ex.Message}");
+}
+finally
+{
+    try { if (File.Exists(largePath)) File.Delete(largePath); } catch { }
+}
 
 var eicarPath = Path.Combine(samplesDir, "eicar.js");
 try

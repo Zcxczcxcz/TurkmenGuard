@@ -6,10 +6,12 @@ namespace TurkmenGuard.Monitoring;
 
 /// <summary>
 /// Monitors new processes and scans suspicious executables.
+/// Emits activity events for every new process so the Protection UI feels live.
 /// </summary>
 public class ProcessMonitor : IDisposable
 {
     private readonly ScannerEngine _scanner;
+    private readonly AppSettings _settings;
     private readonly HashSet<int> _knownPids = [];
     private readonly HashSet<string> _blacklist = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -21,15 +23,25 @@ public class ProcessMonitor : IDisposable
     private System.Threading.Timer? _timer;
     private int _running;
     private int _checking;
+    private int _processesSeen;
+    private int _processesScanned;
+    private int _threatsFound;
+    private DateTime _lastActivityUtc = DateTime.MinValue;
 
     public event Action<string>? ProcessEvent;
     public event Action<ThreatInfo>? ThreatDetected;
+    public event Action? StatsChanged;
 
     public bool IsRunning => Volatile.Read(ref _running) == 1;
+    public int ProcessesSeen => Volatile.Read(ref _processesSeen);
+    public int ProcessesScanned => Volatile.Read(ref _processesScanned);
+    public int ThreatsFound => Volatile.Read(ref _threatsFound);
+    public DateTime LastActivityUtc => _lastActivityUtc;
 
-    public ProcessMonitor(ScannerEngine scanner)
+    public ProcessMonitor(ScannerEngine scanner, AppSettings settings)
     {
         _scanner = scanner;
+        _settings = settings;
     }
 
     public void Start()
@@ -52,8 +64,10 @@ public class ProcessMonitor : IDisposable
             DisposeProcesses(snapshot);
         }
 
-        _timer = new System.Threading.Timer(_ => CheckProcesses(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        ProcessEvent?.Invoke(LocalizationService.Get("PmStarted"));
+        _timer = new System.Threading.Timer(_ => CheckProcesses(), null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
         Logger.Info("Process monitor started");
+        StatsChanged?.Invoke();
     }
 
     public void Stop()
@@ -63,7 +77,9 @@ public class ProcessMonitor : IDisposable
 
         _timer?.Dispose();
         _timer = null;
+        ProcessEvent?.Invoke(LocalizationService.Get("PmStopped"));
         Logger.Info("Process monitor stopped");
+        StatsChanged?.Invoke();
     }
 
     private void CheckProcesses()
@@ -91,6 +107,8 @@ public class ProcessMonitor : IDisposable
                     _knownPids.Add(proc.Id);
                     var name = proc.ProcessName;
                     var path = GetProcessPath(proc.Id);
+                    Interlocked.Increment(ref _processesSeen);
+                    _lastActivityUtc = DateTime.UtcNow;
 
                     if (_blacklist.Contains(name + ".exe"))
                     {
@@ -103,27 +121,46 @@ public class ProcessMonitor : IDisposable
                             Details = $"Blacklisted process: {name}"
                         };
                         Logger.Threat(threat.Details);
+                        Interlocked.Increment(ref _threatsFound);
                         ThreatDetected?.Invoke(threat);
-                        ProcessEvent?.Invoke($"Blacklisted: {name} (PID {proc.Id})");
+                        ProcessEvent?.Invoke(LocalizationService.Format("PmBlacklisted", name, proc.Id));
+                        StatsChanged?.Invoke();
                         continue;
                     }
 
-                    if (!string.IsNullOrEmpty(path) && File.Exists(path) &&
-                        path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
-                        !_scanner.IsBulkScanActive)
-                    {
-                        _ = Task.Run(async () =>
-                        {
-                            var result = await _scanner.ScanFileAsync(path, ScanMode.RealTime);
-                            if (!result.IsThreat) return;
+                    // Always show new process in the live feed (short name)
+                    ProcessEvent?.Invoke(LocalizationService.Format("PmNewProcess", name, proc.Id));
+                    StatsChanged?.Invoke();
 
-                            foreach (var threat in result.Threats)
-                            {
-                                ProcessEvent?.Invoke($"Threat in process: {name} - {threat.ThreatName}");
-                                ThreatDetected?.Invoke(threat);
-                            }
-                        });
-                    }
+                    if (string.IsNullOrEmpty(path) || !File.Exists(path) ||
+                        !path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+                        _scanner.IsBulkScanActive ||
+                        _settings.IsExcluded(path) ||
+                        TrustedPaths.IsTrusted(path))
+                        continue;
+
+                    Interlocked.Increment(ref _processesScanned);
+                    var capturedName = name;
+                    var capturedPath = path;
+                    _ = Task.Run(async () =>
+                    {
+                        var result = await _scanner.ScanFileAsync(capturedPath, ScanMode.RealTime);
+                        if (!result.IsThreat)
+                        {
+                            ProcessEvent?.Invoke(LocalizationService.Format("PmProcessOk", capturedName));
+                            StatsChanged?.Invoke();
+                            return;
+                        }
+
+                        foreach (var threat in result.Threats)
+                        {
+                            Interlocked.Increment(ref _threatsFound);
+                            ProcessEvent?.Invoke(LocalizationService.Format("PmProcessThreat", capturedName, threat.ThreatName));
+                            ThreatDetected?.Invoke(threat);
+                        }
+
+                        StatsChanged?.Invoke();
+                    });
                 }
                 catch
                 {

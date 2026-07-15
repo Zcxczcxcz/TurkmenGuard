@@ -30,7 +30,7 @@ rule Persist_Schtasks_Hidden {
         $ps = "powershell" nocase
     condition:
         filesize < 256KB and
-        all of ($sch, $create, $ps) and
+        all of ($sch, $create, $ps, $hidden) and
         (1 of ($onlogon, $onstart))
 }
 

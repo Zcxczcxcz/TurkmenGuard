@@ -29,7 +29,7 @@
                 <!-- Brand header -->
                 <StackPanel DockPanel.Dock="Top" Margin="20,0,20,28">
                     <Border Width="44" Height="44" CornerRadius="10"
-                            Background="{StaticResource AccentGreenBrush}" Margin="0,0,0,12">
+                            Background="{DynamicResource AccentGreenBrush}" Margin="0,0,0,12">
                         <TextBlock Text="TG" FontSize="16" FontWeight="Bold"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Foreground="White"/>
@@ -65,10 +65,10 @@
                                     <Setter Property="Background" Value="{DynamicResource CardHoverBackgroundBrush}"/>
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="BorderBrush" Value="{StaticResource AccentGreenBrush}"/>
-                                    <Setter Property="Background" Value="{StaticResource AccentGreenFaintBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenBrush}"/>
+                                    <Setter Property="Background" Value="{DynamicResource AccentGreenFaintBrush}"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -101,7 +101,7 @@
                 Padding="16,0">
             <DockPanel VerticalAlignment="Center">
                 <TextBlock DockPanel.Dock="Right" Text="{Binding VersionText}"
-                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                 <StackPanel Orientation="Horizontal">
                     <Ellipse Width="8" Height="8" Margin="0,0,8,0">
                         <Ellipse.Fill>

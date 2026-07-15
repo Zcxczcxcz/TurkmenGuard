@@ -44,9 +44,13 @@ rule Ransomware_Encrypted_Extension {
         author = "TurkmenGuard"
     strings:
         $btc = "bitcoin" nocase
-        $pay = "decrypt" nocase
-        $wallet = "wallet" nocase
-        $locked = "your files" nocase
+        $pay = "decrypt your files" nocase
+        $wallet = "bitcoin wallet" nocase
+        $locked = "your files have been encrypted" nocase
+        $onion = ".onion" nocase
+        $ransom = "ransom" nocase
     condition:
-        filesize < 1MB and 3 of them
+        filesize < 64KB and
+        ($locked or $pay) and
+        2 of ($btc, $wallet, $onion, $ransom)
 }

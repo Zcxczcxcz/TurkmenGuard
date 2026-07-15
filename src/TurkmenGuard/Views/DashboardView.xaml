@@ -7,33 +7,33 @@
         <StackPanel>
             <TextBlock Text="{Binding WelcomeText}"
                        FontSize="22" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        Margin="0,0,0,4"/>
             <TextBlock Text="{Binding DashboardTitle}"
                        FontSize="14"
-                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        Margin="0,0,0,24"/>
 
             <UniformGrid Columns="3" Margin="0,0,0,24">
                 <materialDesign:Card Margin="0,0,8,0" Padding="24"
-                                     Background="{StaticResource CardBackgroundBrush}"
+                                     Background="{DynamicResource CardBackgroundBrush}"
                                      UniformCornerRadius="8">
                     <StackPanel>
                         <TextBlock Text="{Binding FilesScannedLabel}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"/>
                         <TextBlock Text="{Binding FilesScanned}"
                                    FontSize="32" FontWeight="Bold"
-                                   Foreground="{StaticResource BrandGreenBrush}"
+                                   Foreground="{DynamicResource BrandGreenBrush}"
                                    Margin="0,8,0,0"/>
                     </StackPanel>
                 </materialDesign:Card>
 
                 <materialDesign:Card Margin="4,0,4,0" Padding="24"
-                                     Background="{StaticResource CardBackgroundBrush}"
+                                     Background="{DynamicResource CardBackgroundBrush}"
                                      UniformCornerRadius="8">
                     <StackPanel>
                         <TextBlock Text="{Binding ThreatsFoundLabel}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"/>
                         <TextBlock Text="{Binding ThreatsFound}"
                                    FontSize="32" FontWeight="Bold"
                                    Foreground="#C04848"
@@ -42,40 +42,40 @@
                 </materialDesign:Card>
 
                 <materialDesign:Card Margin="8,0,0,0" Padding="24"
-                                     Background="{StaticResource CardBackgroundBrush}"
+                                     Background="{DynamicResource CardBackgroundBrush}"
                                      UniformCornerRadius="8">
                     <StackPanel>
                         <TextBlock Text="{Binding QuarantineLabel}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"/>
                         <TextBlock Text="{Binding QuarantineCount}"
                                    FontSize="32" FontWeight="Bold"
-                                   Foreground="{StaticResource BrandGreenBrush}"
+                                   Foreground="{DynamicResource BrandGreenBrush}"
                                    Margin="0,8,0,0"/>
                     </StackPanel>
                 </materialDesign:Card>
             </UniformGrid>
 
             <materialDesign:Card Padding="24" Margin="0,0,0,16"
-                                 Background="{StaticResource CardBackgroundBrush}"
+                                 Background="{DynamicResource CardBackgroundBrush}"
                                  UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding RealTimeLabel}"
                                FontSize="14" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding ProtectionStatus}"
-                               FontSize="16" Foreground="{StaticResource BrandGreenBrush}"/>
+                               FontSize="16" Foreground="{DynamicResource BrandGreenBrush}"/>
                 </StackPanel>
             </materialDesign:Card>
 
             <materialDesign:Card Padding="24"
-                                 Background="{StaticResource CardBackgroundBrush}"
+                                 Background="{DynamicResource CardBackgroundBrush}"
                                  UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding YaraStatusLabel}"
                                FontSize="14" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding YaraStatus}"
-                               FontSize="14" Foreground="{StaticResource TextSecondaryBrush}"/>
+                               FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
             </materialDesign:Card>
         </StackPanel>

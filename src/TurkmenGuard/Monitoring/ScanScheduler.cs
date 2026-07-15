@@ -67,7 +67,7 @@ public class ScanScheduler : IDisposable
 
         var last = _settings.LastScheduledScan;
         if (last == null)
-            return false;
+            return true;
 
         return _settings.ScanSchedule switch
         {

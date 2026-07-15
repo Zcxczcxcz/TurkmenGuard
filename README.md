@@ -1,4 +1,4 @@
-# TurkmenGuard (Türkmen Goragçy) v4.5.3
+# TurkmenGuard (Türkmen Goragçy) v4.7.2
 
 **Репозиторий:** https://github.com/Zcxczcxcz/TurkmenGuard  
 **Для разработчиков:** [docs/DEVELOPERS.md](docs/DEVELOPERS.md) · **Backend API:** [backend/README.md](backend/README.md)
@@ -16,10 +16,10 @@
 |----------|----------|
 | Платформа | **.NET Framework 4.8** (`net48`) — совместимость с Windows 7 |
 | UI | WPF + Material Design 3, корпоративная тёмная тема |
-| Движок | **ClamAV 1.5.3** (полный libclamav) → YARA → Entropy (PE, 7.95) |
+| Движок | **ClamAV 1.5.3** (полный libclamav) → YARA → Hash fallback |
 | Hash fallback | SQLite 540k+ (если ClamAV engine не установлен) |
 | Сеть | `SignatureUpdateService` + `freshclam` для CVD |
-| Версия | **4.5.3** |
+| Версия | **4.7.2** |
 
 ### Функции
 
@@ -247,10 +247,12 @@ powershell -ExecutionPolicy Bypass -File tools\build-hash-db.ps1
 ### Сканирование
 | Кнопка | Действие |
 |--------|----------|
-| **Quick Scan** | Downloads, Desktop, Temp, Documents |
-| **Full Scan** | Все локальные диски |
+| **Quick Scan** | Downloads, Desktop, Temp, Documents (ClamAV + YARA) |
+| **Full Scan** | Все локальные диски, включая Program Files / Windows (без whitelist ПО) |
 | **Custom Scan** | Выбранная папка |
-| **File Scan** | Один файл |
+| **File Scan** | Один файл (полный ClamAV + YARA) |
+
+**Политика v4.7.x:** белых списков нет. Файлы ≤8 МБ — полный ClamAV; **крупнее** — LargeFileScanner (PE/overlay/края/архив). `INSTREAM timeout` = перегрузка clamd, не «сервис мёртв». После обновления полностью перезапустите приложение.
 
 ### Защита в реальном времени
 Вкладка **Goragçylyk / Protection** — включить/выключить FileSystemWatcher.
@@ -260,7 +262,7 @@ powershell -ExecutionPolicy Bypass -File tools\build-hash-db.ps1
 
 ### Настройки
 - Язык, тема, расписание сканов
-- Исключения (папки + расширения)
+- Исключения (папки + расширения) — только то, что вы добавите вручную
 - **Обновление сигнатур**: еженедельно / вручную, URL backend, кнопка «Обновить сейчас»
 - Журнал приложения
 
@@ -274,13 +276,15 @@ powershell -ExecutionPolicy Bypass -File tools\build-hash-db.ps1
 ## Архитектура сканирования
 
 ```
-Файл → exclusions + extension filter
-     → ClamAV engine (libclamav: .ndb, .ldb, .hdb, .hsb, bytecode)
-     → YARA (libyara.NET, 6 rule files)
-     → Entropy (только PE .exe/.dll, per-section, порог 7.95)
+Файл ≤ 8 МБ  → ClamAV INSTREAM → YARA (по режиму)
+Файл > 8 МБ  → LargeFileScanner:
+                 PE header + section samples + overlay
+                 head/tail edges (non-PE)
+                 ZIP/SFX → извлечь .exe/.dll/.js… → ClamAV/YARA
+File Scan    → опционально полный ClamAV до 256 МБ, затем large-path
 ```
 
-Если ClamAV engine недоступен — автоматический fallback на SQLite hash (540k сигнатур).
+Гигабайтные приложения не гоняются целиком через ClamAV — проверяются места посадки вредоноса (overlay, края, вложенные PE).
 
 ### ClamAV как основной движок (v4.2)
 
@@ -418,6 +422,122 @@ TurkmenGuard/
 ---
 
 ## История изменений (Changelog)
+
+### v4.7.2 (2026-07-15) — LargeFileScanner для гигабайтных приложений
+- Файлы **> 8 МБ** больше не игнорируются и не гоняются целиком через INSTREAM
+- **PE:** заголовок, сэмплы секций, overlay (head/tail если overlay огромный)
+- **Non-PE:** первые и последние 4 МБ
+- **ZIP/SFX:** извлечение исполняемых вложений во scratch → ClamAV + YARA
+- **File Scan:** structural first, затем опционально полный ClamAV до **256 МБ**; любой выбранный файл сканируется
+- ClamAV `ScanBytes` + YARA `ScanMemory` для срезов
+- **TrustedPaths:** только движок (exe/dll/ClamAV/Data/Rules/AppData), не вся папка установки
+- Интеграционные тесты: **21/21 PASS**
+- `pagefile`/`hiberfil` по-прежнему пропускаются по имени
+
+### v4.7.1 (2026-07-15) — таймауты ClamAV + ускорение Full Scan
+**Что значит `INSTREAM slow/timeout`:** демон clamd **жив**, но этот файл не успел провериться (очередь/тяжёлый файл). Скан не останавливается — файл пропускается для ClamAV; при маленьком размере подключается YARA.
+
+**Исправления скорости Full:**
+- Таймаут Full 1.2–3 с (раньше до 20 с на файл)
+- Лимит ClamAV 8 МБ (не 25 МБ); архивы ≤2 МБ; ISO не сканируются на Full
+- Full **последовательно** (2 параллельных INSTREAM перегружали clamd → streak=25)
+- YARA на Full только для скриптов / реального timeout / SingleFile — **не** на каждый DLL ≤2 МБ
+- Oversized файлы больше не считаются «timeout»
+- При streak≥8 clamd автоматически уменьшает размер/таймаут, пока не восстановится
+- Пропуск: SoftwareDistribution, Prefetch, node_modules, .git
+
+**Важно:** полностью перезапустите TurkmenGuard (clamd.conf переписывается при старте).
+
+### v4.7.0 (2026-07-15) — полное системное сканирование без белых списков ПО
+**Политика:**
+- Убраны whitelist’ы Chrome/Steam/VS Code/chocolatey/Program Files/Windows
+- Full Scan снова идёт по всей системе (диски), включая Program Files
+- Автоисключения `C:\Windows` + Program Files из settings **снимаются** при загрузке
+
+**Скорость (без потери троянов/червей):**
+- ClamAV INSTREAM — основной детектор known malware
+- YARA на Full — скрипты / timeout / SingleFile
+- Технические пропуски: WinSxS, Installer, pagefile/hiberfil, GPUCache
+
+**FP:** PUA/Adware по-прежнему режутся; Trojan/Worm/Virus/Ransom **никогда** не фильтруются как шум  
+**Свой процесс** (bin + AppData TurkmenGuard + ClamAV) — единственный «trust», чтобы не карантинировать себя
+
+### v4.6.8 (2026-07-15) — покрытие скана + тестовые вирусы
+- **Почему 500k → 70k:** раньше в счёт шли extensionless/кэши (LOCK, Steam htmlcache…); это не «больше защиты», а шум. Сейчас считаются реальные кандидаты
+- **Почему 0 угроз:** Quick после чистого ClamAV **не вызывал YARA** — кастомный `TURKMENGUARD_TEST_VIRUS` и часть EICAR-.txt не ловились
+- Quick снова: **ClamAV INSTREAM + YARA** (оба слоя)
+- Full: снова сканирует unknown/.txt(≤4KB)/мелкие extensionless; тестовые сэмплы в папке проекта больше не в TrustedPaths
+- ClamAV daemon **работает на Windows** (zINSTREAM) — это не Linux-only
+- Сохранены: UI без зависаний, INSTREAM скорость, FP-фильтры, AUMID, живая Защита
+
+### v4.6.7 (2026-07-15) — ClamAV INSTREAM (быстрый Quick)
+- **Корень тормозов:** команда `nSCAN` на Windows зависает; PING работал, сканы — нет
+- Переход на **`zINSTREAM`** (байты файла в clamd) — ~30 мс на мелкий файл вместо таймаутов
+- Quick: таймаут 3с, файлы > 8 МБ → лёгкий YARA; после 8 таймаутов — авто-fallback на YARA
+- Полностью закрой старый процесс перед стартом (иначе clamd остаётся «заклиненным»)
+
+### v4.6.6 (2026-07-15) — Quick Scan скорость (ClamAV TCP)
+- **Причина тормозов:** на каждый файл запускался `clamdscan.exe` с таймаутом 20с → десятки минут
+- Теперь сканирование через **TCP `nSCAN` к clamd** (без нового процесса на файл)
+- Quick: таймаут 6с, файлы > 12 МБ пропускаются, параллелизм 2
+- clamd.conf: MaxFileSize 25M / MaxThreads 4
+- Advisory Shellcode в логах до 10:57 — старый скан; в 4.6.5 правило уже отключено
+
+### v4.6.5 (2026-07-15) — ClamAV daemon + AUMID + строгие YARA
+- **Почему только YARA:** `clamd.conf` писался с UTF-8 BOM → ClamAV не читал конфиг → `daemon=False`, работали только YARA/hash
+- Конфиги ClamAV теперь **без BOM**, `Foreground yes`, всегда перезаписываются при старте
+- **Уведомления:** `AppUserModelID=TurkmenGuard.Desktop` + бренд `Turkmen Guard` (вместо «notifyicon generated aumid»)
+- **YARA ужесточены:** webshell/AMSI/ransomware требуют реальные маркеры; `shellcode_pe.yar` отключён (ложные PE)
+- Пропуск: extensionless/LevelDB/Steam/Chrome/chocolatey caches
+- `Hash check failed` на locked-файлах больше не спамит WARN (это нормально — файл занят)
+
+### v4.6.4 (2026-07-15) — меньше FP, короткие уведомления, живая Защита
+- **Ложные срабатывания (до v4.7.0):** раньше TrustedPaths включал IDE/расширения; с 4.7.0 — только свой install/AppData/ClamAV
+- DetectionFilter: packer/PUA/adware noise + эвристики Obfuscat/Encoded только для Single File
+- **Уведомления:** заголовок всегда `TurkmenGuard`, короткий текст без длинных имён сигнатур
+- **Раздел Защита:** пульс, счётчики (папки/файлы/процессы/блокировки), лента «Процесс · … / ОК · …»
+- Включение защиты автоматически запускает мониторинг процессов (раньше UI был «мёртвым»)
+
+### v4.6.3 (2026-07-15) — Full Scan застревал на одном файле
+- **Реальная причина (не UI):** Full Scan начинал с `C:\hiberfil.sys` / `pagefile.sys` → YARA/hash зависали на multi‑GB locked файлах
+- Пропуск volume-файлов: `hiberfil.sys`, `pagefile.sys`, `swapfile.sys`, `dumpstack.log*`
+- Лимит размера: YARA ≤ 32 МБ, hash ≤ 64 МБ; locked-файлы пропускаются до скана
+- **ClamAV daemon:** `Foreground yes` (раньше `Foreground no` → процесс «выходил» и демон считался мёртвым)
+- UI: фаза «Сбор файлов…», прогресс обновляется чаще
+- YARA: исправлен `persistence_registry.yar` (unused `$hidden` ломал компиляцию правила)
+
+### v4.6.2 (2026-07-15) — белый экран при сканировании
+- **Причина:** Quick/Full/Custom scan выполнялись на UI-потоке WPF (`Task.Yield` возвращал управление обратно в UI → зависание и белый экран)
+- **Исправление:** `RunScanAsync` / `ExecuteLockedScanAsync` / scheduled scan всегда на thread pool (`Task.Run`)
+- Вместо `Task.Yield()` — `HopToThreadPoolAsync()` (не возвращает на WPF SynchronizationContext)
+- UI: сразу «Запуск сканирования…», перехват ошибок скана (`ScanError`), безопасный `Dispatcher` для результатов
+- `App`: обработчики `DispatcherUnhandledException` / unobserved tasks — окно не падает в белый экран
+- Локализация: `ScanStarting`, `ScanError` (en/ru/tk)
+
+### v4.6.1 (2026-07-14) — исправлено сканирование
+- **Quick Scan** — параллельное сканирование батчами по 48 файлов (раньше создавалось 10k+ Task → зависание)
+- **Quick Scan** — прогресс во время перечисления файлов (Desktop/Downloads больше не «молчит» минутами)
+- **Quick Scan без clamd** — только YARA, последовательно (hash на 10k+ файлов убран)
+- **Quick Scan с clamd** — параллельно батчами по 48 файлов
+- **Single File без clamd** — YARA → hash, без медленного clamscan
+- Убран лишний `Task.Run` в `ScanFileAsync` (deadlock thread pool)
+
+### v4.6.0 (2026-07-14) — стабилизация: все обещанные фичи в коде
+- **Отмена скана** — мгновенное убийство активного `clamscan`/`clamdscan` (`CancelActiveScan`)
+- **Custom/File scan** — через `ExecuteLockedScanAsync` + `_scanLock` (не конфликтуют с Full/Quick)
+- **BulkScanSession** — корректный `EnterBulkScan()` при создании
+- **Real-time** — файлы из очереди не теряются во время bulk scan (re-enqueue)
+- **Real-time Restart()** — папки мониторинга применяются после сохранения настроек
+- **ProcessMonitor** — все угрозы обрабатываются; работает **независимо** от Real-time
+- **Планировщик** — первый scheduled scan запускается при `LastScheduledScan == null`
+- **Manual vs Scheduled** — `LastManualScan` / `LastScheduledScan` разделены
+- **Исключения** — Windows/Program Files добавляются только при первом запуске, не каждый Load
+- **Dashboard** — обновляется после ручного скана
+- **Темы** — `DynamicResource` для всех theme-brush во Views
+- **SignatureUpdateService.Restart()** — применяет настройки обновлений без перезапуска
+- **Quick Scan** — YARA fallback если ClamAV daemon недоступен
+- **Entropy** убран из Full Scan (всё равно фильтровался — лишняя нагрузка)
+- **SettingsViewModel** — defaults совпадают с `AppSettings` (AutoQuarantine off, PM off)
 
 ### v4.5.3 (2026-07-14) — Full Scan не морозит UI
 - **Full Scan** — потоковое перечисление файлов (без `.ToList()` на весь диск)

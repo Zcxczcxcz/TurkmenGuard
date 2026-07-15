@@ -6,23 +6,23 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
             <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,24"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24"/>
 
             <UniformGrid Columns="2" Margin="0,0,0,24">
                 <Button Margin="0,0,8,0" Height="48"
                         Command="{Binding QuickScanCommand}"
                         Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="{StaticResource BrandGreenBrush}"
+                        Background="{DynamicResource BrandGreenBrush}"
                         Content="{Binding QuickScanLabel}"/>
                 <Button Margin="8,0,0,0" Height="48"
                         Command="{Binding FullScanCommand}"
                         Style="{StaticResource MaterialDesignOutlinedButton}"
-                        BorderBrush="{StaticResource BrandGreenBrush}"
+                        BorderBrush="{DynamicResource BrandGreenBrush}"
                         Content="{Binding FullScanLabel}"/>
             </UniformGrid>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,16"
-                                 Background="{StaticResource CardBackgroundBrush}"
+                                 Background="{DynamicResource CardBackgroundBrush}"
                                  UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding FileScanLabel}" FontWeight="SemiBold" Margin="0,0,0,12"/>
@@ -38,13 +38,13 @@
                     <Button Margin="0,12,0,0" Height="40"
                             Command="{Binding FileScanCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
-                            Background="{StaticResource BrandGreenBrush}"
+                            Background="{DynamicResource BrandGreenBrush}"
                             Content="{Binding StartLabel}"/>
                 </StackPanel>
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,16"
-                                 Background="{StaticResource CardBackgroundBrush}"
+                                 Background="{DynamicResource CardBackgroundBrush}"
                                  UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding CustomScanLabel}" FontWeight="SemiBold" Margin="0,0,0,12"/>
@@ -60,21 +60,21 @@
                     <Button Margin="0,12,0,0" Height="40"
                             Command="{Binding CustomScanCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
-                            Background="{StaticResource BrandGreenBrush}"
+                            Background="{DynamicResource BrandGreenBrush}"
                             Content="{Binding StartLabel}"/>
                 </StackPanel>
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,16"
-                                 Background="{StaticResource CardBackgroundBrush}"
+                                 Background="{DynamicResource CardBackgroundBrush}"
                                  UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding ProgressText}"
-                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
                     <ProgressBar Value="{Binding ProgressValue}" Height="8" Maximum="100"
                                  IsIndeterminate="{Binding IsIndeterminate}"/>
                     <TextBlock Text="{Binding ThreatsLabel}" Margin="0,12,0,0"
-                               Foreground="{StaticResource BrandGreenBrush}"/>
+                               Foreground="{DynamicResource BrandGreenBrush}"/>
                     <Button Margin="0,12,0,0" HorizontalAlignment="Left"
                             Command="{Binding CancelScanCommand}"
                             Style="{StaticResource MaterialDesignOutlinedButton}"
@@ -84,7 +84,7 @@
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20"
-                                 Background="{StaticResource CardBackgroundBrush}"
+                                 Background="{DynamicResource CardBackgroundBrush}"
                                  UniformCornerRadius="8"
                                  Visibility="{Binding HasResults, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
@@ -92,7 +92,7 @@
                     <DataGrid ItemsSource="{Binding ThreatResults}" AutoGenerateColumns="False"
                               IsReadOnly="True" CanUserAddRows="False" MaxHeight="240"
                               Background="Transparent"
-                              Foreground="{StaticResource TextPrimaryBrush}"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
                               HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{Binding DataContext.ColFile, RelativeSource={RelativeSource AncestorType=UserControl}}"

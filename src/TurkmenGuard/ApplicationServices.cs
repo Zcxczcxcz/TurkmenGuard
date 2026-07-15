@@ -124,11 +124,7 @@ public class ApplicationServices
         ProcessMonitor.ThreatDetected += OnProcessMonitorThreat;
     }
 
-    private void OnProcessMonitorThreat(ThreatInfo threat)
-    {
-        if (threat.Method == DetectionMethod.Process)
-            HandleThreat(threat);
-    }
+    private void OnProcessMonitorThreat(ThreatInfo threat) => HandleThreat(threat);
 
     private void HandleThreat(ThreatInfo threat)
     {
@@ -164,10 +160,14 @@ public class ApplicationServices
         }
 
         if (Settings.RealTimeEnabled)
-            SetRealTimeProtection(true);
+        {
+            RealTimeGuard.Restart();
+            Settings.ProcessMonitorEnabled = true;
+            ProcessMonitor.Start();
+        }
         else
         {
-            SetRealTimeProtection(false);
+            RealTimeGuard.Stop();
             if (Settings.ProcessMonitorEnabled)
                 ProcessMonitor.Start();
             else
@@ -175,19 +175,23 @@ public class ApplicationServices
         }
 
         ScanScheduler.Restart();
+        SignatureUpdates.Restart();
         DashboardRefreshRequested?.Invoke();
     }
 
     public void RequestDashboardRefresh() => DashboardRefreshRequested?.Invoke();
 
-    /// <summary>Real-time protection = filesystem watcher + process monitor.</summary>
+    /// <summary>
+    /// Real-time protection = filesystem watcher + process monitor together
+    /// so the Protection page always shows live activity when enabled.
+    /// </summary>
     public void SetRealTimeProtection(bool enabled)
     {
         if (enabled)
         {
             RealTimeGuard.Start();
-            ProcessMonitor.Start();
             Settings.ProcessMonitorEnabled = true;
+            ProcessMonitor.Start();
         }
         else
         {

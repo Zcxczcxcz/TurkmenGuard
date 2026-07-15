@@ -13,11 +13,11 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private ComboOption? _selectedLanguageOption;
     [ObservableProperty] private ComboOption? _selectedThemeOption;
     [ObservableProperty] private ComboOption? _selectedScheduleOption;
-    [ObservableProperty] private bool _autoQuarantine = true;
+    [ObservableProperty] private bool _autoQuarantine;
     [ObservableProperty] private bool _autoStart;
     [ObservableProperty] private bool _selfProtection = true;
     [ObservableProperty] private bool _notificationsEnabled = true;
-    [ObservableProperty] private bool _processMonitorEnabled = true;
+    [ObservableProperty] private bool _processMonitorEnabled;
     [ObservableProperty] private string _excludedExtensions = "";
     [ObservableProperty] private string _excludedFolders = "";
     [ObservableProperty] private string _monitoredFolders = "";

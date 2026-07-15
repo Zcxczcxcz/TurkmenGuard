@@ -9,15 +9,15 @@
                     Style="{StaticResource MaterialDesignOutlinedButton}"
                     Content="{Binding RefreshLabel}"/>
             <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </DockPanel>
 
         <DataGrid x:Name="QuarantineGrid" ItemsSource="{Binding Entries}" AutoGenerateColumns="False"
                   IsReadOnly="True" CanUserAddRows="False"
-                  Background="{StaticResource CardBackgroundBrush}"
-                  Foreground="{StaticResource TextPrimaryBrush}"
-                  RowBackground="{StaticResource CardBackgroundBrush}"
-                  AlternatingRowBackground="{StaticResource SidebarBackgroundBrush}"
+                  Background="{DynamicResource CardBackgroundBrush}"
+                  Foreground="{DynamicResource TextPrimaryBrush}"
+                  RowBackground="{DynamicResource CardBackgroundBrush}"
+                  AlternatingRowBackground="{DynamicResource SidebarBackgroundBrush}"
                   HeadersVisibility="Column" GridLinesVisibility="Horizontal">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="{Binding DataContext.ColFile, RelativeSource={RelativeSource AncestorType=UserControl}}" Binding="{Binding OriginalPath}" Width="*"/>

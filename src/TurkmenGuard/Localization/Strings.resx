@@ -5,6 +5,33 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppTitle" xml:space="preserve"><value>Türkmen Goragçy</value></data>
+  <data name="NotifyBrand" xml:space="preserve"><value>Turkmen Guard</value></data>
+  <data name="ThreatDetectedShort" xml:space="preserve"><value>Threat blocked</value></data>
+  <data name="ThreatDetectedShortFile" xml:space="preserve"><value>Threat: {0}</value></data>
+  <data name="LiveActivity" xml:space="preserve"><value>Live activity</value></data>
+  <data name="ProtectionLive" xml:space="preserve"><value>Watching folders and new processes…</value></data>
+  <data name="ProtectionIdle" xml:space="preserve"><value>Enable protection to start monitoring</value></data>
+  <data name="WaitingForActivity" xml:space="preserve"><value>Waiting for file or process activity…</value></data>
+  <data name="ActivityJustNow" xml:space="preserve"><value>Last activity: just now</value></data>
+  <data name="ActivitySecondsAgo" xml:space="preserve"><value>Last activity: {0}s ago</value></data>
+  <data name="ActivityMinutesAgo" xml:space="preserve"><value>Last activity: {0} min ago</value></data>
+  <data name="RtStatFolders" xml:space="preserve"><value>Folders: {0}</value></data>
+  <data name="RtStatFiles" xml:space="preserve"><value>Files checked: {0}</value></data>
+  <data name="RtStatProcesses" xml:space="preserve"><value>Processes: {0}</value></data>
+  <data name="RtStatThreats" xml:space="preserve"><value>Blocked: {0}</value></data>
+  <data name="RtWatching" xml:space="preserve"><value>Watching {0}</value></data>
+  <data name="RtStopped" xml:space="preserve"><value>File monitoring stopped</value></data>
+  <data name="RtHeartbeat" xml:space="preserve"><value>Still watching {0} folders · {1} files checked</value></data>
+  <data name="RtQueued" xml:space="preserve"><value>New file: {0}</value></data>
+  <data name="RtScanning" xml:space="preserve"><value>Scanning {0}</value></data>
+  <data name="RtClean" xml:space="preserve"><value>OK · {0}</value></data>
+  <data name="RtThreat" xml:space="preserve"><value>Threat · {0}</value></data>
+  <data name="PmStarted" xml:space="preserve"><value>Process monitor started</value></data>
+  <data name="PmStopped" xml:space="preserve"><value>Process monitor stopped</value></data>
+  <data name="PmNewProcess" xml:space="preserve"><value>Process · {0} (PID {1})</value></data>
+  <data name="PmProcessOk" xml:space="preserve"><value>OK · process {0}</value></data>
+  <data name="PmProcessThreat" xml:space="preserve"><value>Threat · {0}</value></data>
+  <data name="PmBlacklisted" xml:space="preserve"><value>Blocked · {0} (PID {1})</value></data>
   <data name="BrandSubtitle" xml:space="preserve"><value>State antivirus system</value></data>
   <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="FilesScanned" xml:space="preserve"><value>Files scanned</value></data>
@@ -43,6 +70,9 @@
   <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="ScanComplete" xml:space="preserve"><value>Scan complete</value></data>
   <data name="ScanCancelled" xml:space="preserve"><value>Scan cancelled</value></data>
+  <data name="ScanStarting" xml:space="preserve"><value>Starting scan…</value></data>
+  <data name="ScanError" xml:space="preserve"><value>Scan failed. See logs for details.</value></data>
+  <data name="ScanCollecting" xml:space="preserve"><value>Collecting files: {0} — {1}</value></data>
   <data name="ScanProgress" xml:space="preserve"><value>{0}/{1} — {2}</value></data>
   <data name="ThreatCount" xml:space="preserve"><value>Threats: {0}</value></data>
   <data name="RecentEvents" xml:space="preserve"><value>Recent events</value></data>

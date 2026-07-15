@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Runtime.InteropServices;
+using System.Windows;
 using TurkmenGuard.Core;
 using TurkmenGuard.Monitoring;
 using TurkmenGuard.Quarantine;
@@ -12,8 +13,31 @@ public partial class App : Application
 {
     private ApplicationServices? _services;
 
+    // Without this Windows shows "notifyicon generated aumid" instead of Turkmen Guard.
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appID);
+
     private void OnStartup(object sender, StartupEventArgs e)
     {
+        try { SetCurrentProcessExplicitAppUserModelID("TurkmenGuard.Desktop"); }
+        catch { /* ignore on older shells */ }
+
+        DispatcherUnhandledException += (_, args) =>
+        {
+            Logger.Error($"Unhandled UI exception: {args.Exception}");
+            args.Handled = true;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+                Logger.Error($"Unhandled domain exception: {ex}");
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Logger.Error($"Unobserved task exception: {args.Exception}");
+            args.SetObserved();
+        };
+
         PathHelper.EnsureDirectories();
         var settings = SettingsService.Load();
 
@@ -34,7 +58,7 @@ public partial class App : Application
         var quarantine = new QuarantineManager();
         var realTimeGuard = new RealTimeGuard(scanner, settings, quarantine);
         var notifications = new NotificationService();
-        var processMonitor = new ProcessMonitor(scanner);
+        var processMonitor = new ProcessMonitor(scanner, settings);
         var scanScheduler = new ScanScheduler(settings, scanner);
         var signatureUpdates = new SignatureUpdateService(settings, scanner);
 

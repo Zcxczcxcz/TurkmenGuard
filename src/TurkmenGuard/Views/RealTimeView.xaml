@@ -3,34 +3,108 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              Background="Transparent">
-    <StackPanel>
-        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
-                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,24"/>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24"/>
 
-        <materialDesign:Card Padding="24" Margin="0,0,0,16"
-                             Background="{StaticResource CardBackgroundBrush}"
-                             UniformCornerRadius="8">
-            <StackPanel>
-                <TextBlock Text="{Binding StatusText}" FontSize="18"
-                           Foreground="{StaticResource BrandGreenBrush}" Margin="0,0,0,8"/>
-                <TextBlock Text="{Binding ProcessMonitorLabel}" FontSize="12"
-                           Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,16"/>
-                <ToggleButton IsChecked="{Binding IsEnabled, Mode=TwoWay}"
-                              Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                              Content="{Binding ToggleLabel}"/>
-            </StackPanel>
-        </materialDesign:Card>
+            <!-- Status + toggle -->
+            <Border Padding="24" Margin="0,0,0,16"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-        <materialDesign:Card Padding="24"
-                             Background="{StaticResource CardBackgroundBrush}"
-                             UniformCornerRadius="8">
-            <StackPanel>
-                <TextBlock Text="{Binding EventsLabel}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                <ListBox ItemsSource="{Binding EventLog}" MaxHeight="280"
-                         Background="Transparent" BorderThickness="0"
-                         Foreground="{StaticResource TextSecondaryBrush}"
-                         FontFamily="Consolas" FontSize="12"/>
-            </StackPanel>
-        </materialDesign:Card>
-    </StackPanel>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <Ellipse Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsEnabled}" Value="True">
+                                                <Setter Property="Fill" Value="{DynamicResource BrandGreenBrush}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsPulseOn}" Value="True">
+                                                <Setter Property="Opacity" Value="0.45"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding StatusText}" FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource BrandGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LiveStatusLabel}" FontSize="13"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="20,0,0,4"/>
+                        <TextBlock Text="{Binding ProcessMonitorLabel}" FontSize="12"
+                                   Foreground="{DynamicResource TextMutedBrush}" Margin="20,0,0,4"/>
+                        <TextBlock Text="{Binding LastActivityText}" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="20,0,0,0"/>
+                    </StackPanel>
+
+                    <ToggleButton Grid.Column="1" VerticalAlignment="Center"
+                                  IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                  Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                  Content="{Binding ToggleLabel}"/>
+                </Grid>
+            </Border>
+
+            <!-- Live counters -->
+            <UniformGrid Columns="4" Margin="0,0,0,16">
+                <Border Margin="0,0,6,0" Padding="16"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="8">
+                    <StackPanel>
+                        <TextBlock Text="{Binding FoldersStat}" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+                <Border Margin="3,0,3,0" Padding="16"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="8">
+                    <TextBlock Text="{Binding FilesStat}" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                </Border>
+                <Border Margin="3,0,3,0" Padding="16"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="8">
+                    <TextBlock Text="{Binding ProcessesStat}" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                </Border>
+                <Border Margin="6,0,0,0" Padding="16"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="8">
+                    <TextBlock Text="{Binding ThreatsStat}" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                </Border>
+            </UniformGrid>
+
+            <!-- Live activity feed -->
+            <Border Padding="24"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                <StackPanel>
+                    <TextBlock Text="{Binding EventsLabel}" FontWeight="SemiBold" Margin="0,0,0,12"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <ListBox ItemsSource="{Binding EventLog}" MaxHeight="320"
+                             Background="Transparent" BorderThickness="0"
+                             Foreground="{DynamicResource TextSecondaryBrush}"
+                             FontFamily="Consolas" FontSize="12"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

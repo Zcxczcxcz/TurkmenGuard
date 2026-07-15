@@ -6,8 +6,8 @@
         Height="520" Width="480"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="{StaticResource BrandDarkBlueBrush}"
-        TextElement.Foreground="{StaticResource TextPrimaryBrush}"
+        Background="{DynamicResource BrandDarkBlueBrush}"
+        TextElement.Foreground="{DynamicResource TextPrimaryBrush}"
         FontFamily="{StaticResource AppFont}">
     <Grid Margin="40">
         <Grid.RowDefinitions>
@@ -18,7 +18,7 @@
 
         <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,20,0,40">
             <Border Width="72" Height="72" CornerRadius="16"
-                    Background="{StaticResource BrandGreenBrush}" Margin="0,0,0,16">
+                    Background="{DynamicResource BrandGreenBrush}" Margin="0,0,0,16">
                 <TextBlock Text="TG" FontSize="28" FontWeight="Bold"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
                            Foreground="White"/>
@@ -26,14 +26,14 @@
             <TextBlock x:Name="TitleBlock" FontSize="24" FontWeight="Bold"
                        HorizontalAlignment="Center"/>
             <TextBlock x:Name="SubtitleBlock" FontSize="13" Margin="0,8,0,0"
-                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        HorizontalAlignment="Center"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1" VerticalAlignment="Center">
             <Button x:Name="BtnTk" Margin="0,0,0,12" Height="52"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
-                    BorderBrush="{StaticResource BrandGreenBrush}"
+                    BorderBrush="{DynamicResource BrandGreenBrush}"
                     Click="OnLanguageClick" Tag="tk">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="🇹🇲" FontSize="18" Margin="0,0,12,0"/>
@@ -59,7 +59,7 @@
         </StackPanel>
 
         <TextBlock Grid.Row="2" x:Name="HintBlock" FontSize="11"
-                   Foreground="{StaticResource TextSecondaryBrush}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
                    HorizontalAlignment="Center" Margin="0,20,0,0"/>
     </Grid>
 </Window>

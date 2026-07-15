@@ -33,7 +33,10 @@ public static class SettingsService
             settings = CreateDefaults();
         }
 
-        EnsureDefaultExclusions(settings);
+        // v4.7+: no longer hide Windows / Program Files from Full Scan
+        if (StripLegacyOsWhitelists(settings))
+            Save(settings);
+
         return settings;
     }
 
@@ -73,8 +76,8 @@ public static class SettingsService
             LastSignatureUpdate = null,
             LastSignatureVersion = null
         };
+        // Only skip inert media by default — user may add folder exclusions manually
         settings.Exclusions.Extensions = ScanPolicy.GetDefaultExcludedExtensions().ToList();
-        EnsureDefaultExclusions(settings);
         return settings;
     }
 
@@ -85,26 +88,36 @@ public static class SettingsService
         Save(settings);
     }
 
-    private static void EnsureDefaultExclusions(AppSettings settings)
+    /// <summary>
+    /// Older builds auto-added Windows + Program Files as exclusions.
+    /// Remove those exact defaults so Full Scan covers the whole system.
+    /// Manual user exclusions for other paths are kept.
+    /// </summary>
+    private static bool StripLegacyOsWhitelists(AppSettings settings)
     {
-        var folders = new List<string>
+        var legacy = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var folder in new[]
+                 {
+                     Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                 })
         {
-            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-        };
-
-        foreach (var folder in folders)
-        {
-            if (string.IsNullOrWhiteSpace(folder))
-                continue;
-
-            var normalized = folder.TrimEnd('\\');
-            if (!settings.Exclusions.Folders.Any(f =>
-                    string.Equals(f.TrimEnd('\\'), normalized, StringComparison.OrdinalIgnoreCase)))
-            {
-                settings.Exclusions.Folders.Add(normalized);
-            }
+            if (!string.IsNullOrWhiteSpace(folder))
+                legacy.Add(folder.TrimEnd('\\'));
         }
+
+        var before = settings.Exclusions.Folders.Count;
+        settings.Exclusions.Folders = settings.Exclusions.Folders
+            .Where(f => !string.IsNullOrWhiteSpace(f) && !legacy.Contains(f.TrimEnd('\\')))
+            .ToList();
+
+        if (settings.Exclusions.Folders.Count != before)
+        {
+            Logger.Info("Removed legacy OS folder exclusions (Windows/Program Files) — Full Scan covers system");
+            return true;
+        }
+
+        return false;
     }
 }

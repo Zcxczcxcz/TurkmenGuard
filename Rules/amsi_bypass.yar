@@ -1,3 +1,5 @@
+// AMSI bypass — require concrete PowerShell/AMSI patch chains, not the word "amsi".
+
 rule AMSI_Bypass_Patch {
     meta:
         description = "AMSI.dll patch bypass pattern"
@@ -6,9 +8,9 @@ rule AMSI_Bypass_Patch {
     strings:
         $amsi = "amsi.dll" nocase
         $patch = "AmsiScanBuffer" nocase
-        $init = "AmsiInitialize" nocase
+        $virt = "VirtualProtect" nocase
     condition:
-        filesize < 2MB and $amsi and 1 of ($patch, $init)
+        filesize < 256KB and all of them
 }
 
 rule AMSI_Bypass_String_Replace {
@@ -17,11 +19,14 @@ rule AMSI_Bypass_String_Replace {
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
-        $amsi = "amsi" nocase
-        $replace = "-replace" nocase
         $bypass = "amsiInitFailed" nocase
+        $replace = "-replace" nocase
+        $context = "amsiContext" nocase
+        $utils = "AmsiUtils" nocase
     condition:
-        filesize < 1MB and 2 of them
+        filesize < 256KB and
+        $bypass and $replace and
+        1 of ($context, $utils)
 }
 
 rule AMSI_Bypass_Reflection {
@@ -33,6 +38,7 @@ rule AMSI_Bypass_Reflection {
         $ref = "System.Management.Automation.AmsiUtils" nocase
         $field = "GetField" nocase
         $amsi = "amsiContext" nocase
+        $set = "SetValue" nocase
     condition:
-        filesize < 1MB and 2 of them
+        filesize < 256KB and all of them
 }

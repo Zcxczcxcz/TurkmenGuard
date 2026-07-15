@@ -1,15 +1,22 @@
+// ASP/ASPX/JSP webshells — require real page markup, not random Process.Start in binaries.
+
 rule WebShell_ASP_Execute {
     meta:
         description = "ASP/ASPX execute command webshell"
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
+        $asp = "<%@" nocase
+        $runat = "runat=\"server\"" nocase
         $exec = "Execute(" nocase
         $eval = "Eval(" nocase
         $cmd = "cmd.exe" nocase
-        $asp = "<%@" nocase
+        $wscript = "WScript.Shell" nocase
     condition:
-        filesize < 2MB and $asp and 1 of ($exec, $eval) and $cmd
+        filesize < 512KB and
+        $asp and $runat and
+        1 of ($exec, $eval) and
+        1 of ($cmd, $wscript)
 }
 
 rule WebShell_ASPX_Shell {
@@ -18,12 +25,16 @@ rule WebShell_ASPX_Shell {
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
-        $process = "Process.Start" nocase
-        $cmd = "cmd.exe" nocase
         $aspx = "<%@" nocase
         $runat = "runat=\"server\"" nocase
+        $process = "Process.Start" nocase
+        $cmd = "cmd.exe" nocase
+        $psi = "ProcessStartInfo" nocase
     condition:
-        filesize < 2MB and 2 of ($process, $cmd, $aspx, $runat)
+        filesize < 512KB and
+        $aspx and $runat and
+        1 of ($process, $psi) and
+        $cmd
 }
 
 rule WebShell_JSP_Runtime {
@@ -32,9 +43,11 @@ rule WebShell_JSP_Runtime {
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
+        $jsp = "<%@" nocase
+        $page = "page language=\"java\"" nocase
         $runtime = "Runtime.getRuntime" nocase
         $exec = ".exec(" nocase
-        $jsp = "<%@" nocase
     condition:
-        filesize < 2MB and $jsp and $runtime and $exec
+        filesize < 512KB and
+        $jsp and $page and $runtime and $exec
 }

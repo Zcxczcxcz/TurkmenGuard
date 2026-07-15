@@ -50,6 +50,7 @@ public static class PathHelper
         Directory.CreateDirectory(LogsDir);
         Directory.CreateDirectory(QuarantineDir);
         Directory.CreateDirectory(ClamLogDir);
+        Directory.CreateDirectory(Path.Combine(AppDataDir, "scratch"));
     }
 
     public static string GetVersion() =>

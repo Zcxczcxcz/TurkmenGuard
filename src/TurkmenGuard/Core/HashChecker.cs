@@ -98,8 +98,12 @@ public class HashChecker
             if (!File.Exists(filePath))
                 return null;
 
-            long fileSize = -1;
-            try { fileSize = new FileInfo(filePath).Length; } catch { }
+            long fileSize = ScanPolicy.TryGetFileLength(filePath);
+            if (fileSize < 0 || fileSize > ScanPolicy.MaxHashFileBytes)
+                return null;
+
+            if (!ScanPolicy.CanOpenForScan(filePath))
+                return null;
 
             if (_database.IsOpen)
             {
@@ -118,9 +122,14 @@ public class HashChecker
             if (_fallback.TryGetValue(hash, out var sig))
                 return BuildThreat(filePath, hash, sig.Name, sig.Severity, "SHA-256");
         }
+        catch (IOException)
+        {
+            // Locked by another process (Steam/Chrome caches) — expected, not an error.
+        }
+        catch (UnauthorizedAccessException) { }
         catch (Exception ex)
         {
-            Logger.Warn($"Hash check failed [{filePath}]: {ex.Message}");
+            Logger.Warn($"Hash check failed [{Path.GetFileName(filePath)}]: {ex.Message}");
         }
 
         return null;

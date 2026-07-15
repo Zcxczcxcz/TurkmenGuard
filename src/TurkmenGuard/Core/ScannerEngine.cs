@@ -4,7 +4,7 @@ using TurkmenGuard.Services;
 namespace TurkmenGuard.Core;
 
 /// <summary>
-/// Multi-stage scan orchestrator: exclusions → ClamAV → YARA → entropy (Full only).
+/// Multi-stage scan orchestrator: exclusions → ClamAV → YARA.
 /// </summary>
 public class ScannerEngine : IDisposable
 {
@@ -14,7 +14,8 @@ public class ScannerEngine : IDisposable
     private readonly AppSettings _settings;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly SemaphoreSlim _fileScanSemaphore = new(1, 1);
-    private readonly SemaphoreSlim _bulkParallelism = new(3, 3);
+    // TCP clamd handles ~2 concurrent SCAN well; more causes queue/timeouts
+    private readonly SemaphoreSlim _bulkParallelism = new(2, 2);
     private readonly object _ctsLock = new();
     private CancellationTokenSource? _scanCts;
     private int _bulkScanDepth;
@@ -82,13 +83,13 @@ public class ScannerEngine : IDisposable
         if (mode == ScanMode.RealTime && IsBulkScanActive)
             return ScanResult.Clean(path);
 
-        var skipSemaphore = mode == ScanMode.Quick && IsBulkScanActive;
+        var skipSemaphore = IsBulkScanActive && mode is ScanMode.Quick or ScanMode.Full;
 
         if (!skipSemaphore)
             await _fileScanSemaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            return await Task.Run(() => ScanFileCore(path, mode, ct), ct).ConfigureAwait(false);
+            return ScanFileCore(path, mode, ct);
         }
         finally
         {
@@ -109,27 +110,90 @@ public class ScannerEngine : IDisposable
         if (_settings.IsExcluded(path) || !ScanPolicy.ShouldScanExtension(path, mode))
             return result;
 
-        var clamTimeoutMs = mode switch
-        {
-            ScanMode.RealTime => 30_000,
-            ScanMode.Quick => 20_000,
-            _ => 120_000
-        };
-        var allowClamScanFallback = mode == ScanMode.SingleFile;
-        var useYara = mode is ScanMode.Full or ScanMode.SingleFile;
+        // Locked OS files (hiberfil.sys etc.) — never hand them to YARA/hash
+        if (!ScanPolicy.CanOpenForScan(path))
+            return result;
 
         try
         {
-            if (_clam.DaemonReady || (allowClamScanFallback && _clam.IsAvailable))
+            var len = ScanPolicy.TryGetFileLength(path);
+            var clamTimeoutMs = ResolveClamTimeoutMs(mode, len);
+
+            // Multi‑MB / GB apps: structural scan first (fast), optional deep ClamAV on File Scan
+            if (len > 0 && LargeFileScanner.NeedsLargeScan(len))
             {
-                var clamThreats = _clam.Scan(path, clamTimeoutMs, allowClamScanFallback);
+                result.Threats.AddRange(ScanLargeFile(path, mode, ct));
+                if (result.Threats.Count > 0)
+                    return FinalizeResult(result, sw, mode);
+
+                // Manual deep pass only when structural found nothing and file is bounded
+                if (mode == ScanMode.SingleFile &&
+                    len <= ScanPolicy.MaxSingleFileClamBytes &&
+                    _clam.DaemonReady)
+                {
+                    var deep = _clam.Scan(path, timeoutMs: 60_000, allowClamScanFallback: false,
+                        maxBytes: ScanPolicy.MaxSingleFileClamBytes);
+                    result.Threats.AddRange(deep);
+                }
+
+                return FinalizeResult(result, sw, mode);
+            }
+
+            // Quick: ClamAV (speed) + YARA always (custom/test sigs ClamAV does not know)
+            if (mode == ScanMode.Quick)
+            {
+                if (len > 0 && len <= ScanPolicy.MaxQuickClamFileBytes && _clam.DaemonReady)
+                {
+                    var clamThreats = _clam.Scan(path, clamTimeoutMs, allowClamScanFallback: false,
+                        maxBytes: ScanPolicy.MaxQuickClamFileBytes);
+                    if (clamThreats.Count > 0)
+                        result.Threats.AddRange(clamThreats);
+                }
+
+                if (_yara.IsAvailable && len > 0 && len <= ScanPolicy.MaxYaraFileBytes)
+                    result.Threats.AddRange(_yara.Scan(path));
+
+                return FinalizeResult(result, sw, mode);
+            }
+
+            // Real-time: ClamAV + YARA (YARA catches custom/test signatures)
+            if (mode == ScanMode.RealTime)
+            {
+                if (_clam.DaemonReady && len > 0 && len <= ScanPolicy.MaxQuickClamFileBytes)
+                {
+                    var clamThreats = _clam.Scan(path, clamTimeoutMs, allowClamScanFallback: false,
+                        maxBytes: ScanPolicy.MaxQuickClamFileBytes);
+                    if (clamThreats.Count > 0)
+                        result.Threats.AddRange(clamThreats);
+                }
+                else if (!_clam.DaemonReady)
+                {
+                    var hashThreat = _hash.Check(path);
+                    if (hashThreat != null && hashThreat.Severity >= ThreatSeverity.High)
+                    {
+                        result.FileHash = HashChecker.ComputeSha256(path);
+                        result.Threats.Add(hashThreat);
+                    }
+                }
+
+                if (_yara.IsAvailable && len > 0 && len <= ScanPolicy.MaxYaraFileBytes)
+                    result.Threats.AddRange(_yara.Scan(path));
+
+                return FinalizeResult(result, sw, mode);
+            }
+
+            // Full / SingleFile (≤ threshold) — ClamAV primary; YARA for scripts / timeout
+            if (_clam.DaemonReady && len > 0 && len <= ScanPolicy.MaxFullClamFileBytes)
+            {
+                var clamThreats = _clam.Scan(path, clamTimeoutMs, allowClamScanFallback: false,
+                    maxBytes: ScanPolicy.MaxFullClamFileBytes);
                 if (clamThreats.Count > 0)
                 {
                     result.Threats.AddRange(clamThreats);
                     return FinalizeResult(result, sw, mode);
                 }
             }
-            else if (!_clam.IsAvailable || !_clam.DaemonReady)
+            else if (!_clam.DaemonReady)
             {
                 var hashThreat = _hash.Check(path);
                 if (hashThreat != null && hashThreat.Severity >= ThreatSeverity.High)
@@ -140,19 +204,10 @@ public class ScannerEngine : IDisposable
                 }
             }
 
-            if (useYara && _yara.IsAvailable)
+            if (_yara.IsAvailable && len > 0 && len <= ScanPolicy.MaxYaraFileBytes &&
+                ShouldRunYaraLayer(path, mode, len))
             {
                 result.Threats.AddRange(_yara.Scan(path));
-                if (result.Threats.Count > 0)
-                    return FinalizeResult(result, sw, mode);
-            }
-
-            if (mode == ScanMode.Full)
-            {
-                result.Entropy = EntropyAnalyzer.CalculateFileEntropy(path);
-                var entropyThreat = EntropyAnalyzer.Analyze(path);
-                if (entropyThreat != null)
-                    result.Threats.Add(entropyThreat);
             }
 
             return FinalizeResult(result, sw, mode);
@@ -163,6 +218,154 @@ public class ScannerEngine : IDisposable
             Logger.Error($"Scan failed [{path}]: {ex.Message}");
             return result;
         }
+    }
+
+    /// <summary>
+    /// Large files: PE header/sections/overlay + edges → ClamAV/YARA buffers;
+    /// ZIP/SFX inners extracted to scratch when present.
+    /// </summary>
+    private List<ThreatInfo> ScanLargeFile(string path, ScanMode mode, CancellationToken ct)
+    {
+        var threats = new List<ThreatInfo>();
+        LargeFileScanner.CleanupScratch();
+
+        var regions = LargeFileScanner.ExtractRegions(path, mode);
+        var regionTimeout = mode == ScanMode.SingleFile ? 8_000 : 3_000;
+
+        foreach (var region in regions)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (region.Data.Length == 0)
+                continue;
+
+            if (_clam.DaemonReady)
+            {
+                var clam = _clam.ScanBytes(region.Data, path, regionTimeout, region.Label);
+                if (clam.Count > 0)
+                {
+                    threats.AddRange(clam);
+                    if (mode != ScanMode.SingleFile)
+                        return threats;
+                }
+            }
+
+            if (_yara.IsAvailable)
+            {
+                var yara = _yara.ScanMemory(region.Data, path, region.Label);
+                if (yara.Count > 0)
+                {
+                    threats.AddRange(yara);
+                    if (mode != ScanMode.SingleFile)
+                        return threats;
+                }
+            }
+        }
+
+        // ZIP / SFX with embedded executables (installers)
+        var allowArchive = mode is ScanMode.SingleFile or ScanMode.Quick or ScanMode.Full;
+        if (allowArchive)
+        {
+            var extracted = LargeFileScanner.ExtractArchiveExecutables(path, mode);
+            try
+            {
+                foreach (var inner in extracted)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (_clam.DaemonReady)
+                    {
+                        var clam = _clam.Scan(inner, timeoutMs: regionTimeout, allowClamScanFallback: false,
+                            maxBytes: ScanPolicy.LargeInnerEntryMaxBytes);
+                        foreach (var t in clam)
+                        {
+                            t.FilePath = path;
+                            t.Details = $"{t.Details} [archive-inner]";
+                        }
+                        threats.AddRange(clam);
+                    }
+
+                    if (_yara.IsAvailable)
+                    {
+                        var yara = _yara.Scan(inner);
+                        foreach (var t in yara)
+                        {
+                            t.FilePath = path;
+                            t.Details = $"{t.Details} [archive-inner]";
+                        }
+                        threats.AddRange(yara);
+                    }
+
+                    if (threats.Count > 0 && mode != ScanMode.SingleFile)
+                        break;
+                }
+            }
+            finally
+            {
+                foreach (var inner in extracted)
+                {
+                    try { File.Delete(inner); } catch { /* ignore */ }
+                }
+            }
+        }
+
+        if (regions.Count > 0)
+            Logger.Info($"LargeFile scan [{Path.GetFileName(path)}]: {regions.Count} regions, {threats.Count} hits");
+
+        return threats;
+    }
+
+    /// <summary>
+    /// Adaptive ClamAV wall-clock: small files finish fast; never wait 20s on Full.
+    /// </summary>
+    private static int ResolveClamTimeoutMs(ScanMode mode, long length)
+    {
+        if (mode == ScanMode.SingleFile)
+            return 12_000;
+        if (mode == ScanMode.RealTime)
+            return 3_500;
+        if (mode == ScanMode.Quick)
+            return length > 2L * 1024 * 1024 ? 3_000 : 2_000;
+
+        // Full — prefer skip-and-continue over long stalls
+        if (length <= 0)
+            return 1_500;
+        if (length <= 256 * 1024)
+            return 1_200;
+        if (length <= 2L * 1024 * 1024)
+            return 2_000;
+        return 3_000;
+    }
+
+    /// <summary>
+    /// Full Scan: ClamAV covers known PE malware. YARA only for scripts / timeout / SingleFile.
+    /// (YARA on every DLL under 2 MB made Full Scan unusably slow.)
+    /// </summary>
+    private bool ShouldRunYaraLayer(string path, ScanMode mode, long length)
+    {
+        if (mode == ScanMode.SingleFile)
+            return true;
+
+        // Real timeout on this file — YARA backup only for small payloads
+        if (_clam.LastScanTimedOut)
+            return length > 0 && length <= 512 * 1024;
+
+        if (!_clam.DaemonReady)
+            return length > 0 && length <= 1024 * 1024;
+
+        var ext = Path.GetExtension(path);
+        return ext.Equals(".js", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".jse", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".ps1", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".vbs", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".vba", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".bat", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".cmd", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".hta", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".wsf", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".txt", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".htm", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".html", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".docm", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".xlsm", StringComparison.OrdinalIgnoreCase);
     }
 
     private ScanResult FinalizeResult(ScanResult result, Stopwatch sw, ScanMode mode)
@@ -197,17 +400,40 @@ public class ScannerEngine : IDisposable
 
         Func<string, bool> skipDir = _settings.ShouldSkipDirectory;
 
-        // Quick scan: small trees — pre-list for parallel scan + progress bar
+        // Quick scan: collect scannable files with live progress, then scan in bounded batches
         if (mode == ScanMode.Quick)
         {
-            var quickFiles = PathHelper.EnumerateFilesSafe(directory, skipDir)
-                .Where(f => !_settings.IsExcluded(f) && ScanPolicy.ShouldScanExtension(f, mode))
-                .ToList();
+            var quickFiles = new List<string>();
+            foreach (var file in PathHelper.EnumerateFilesSafe(directory, skipDir))
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (_settings.IsExcluded(file) || !ScanPolicy.ShouldScanExtension(file, mode))
+                    continue;
+
+                quickFiles.Add(file);
+                if (progress != null && (quickFiles.Count == 1 || quickFiles.Count % 16 == 0))
+                {
+                    progress.TotalFiles = quickFiles.Count;
+                    progress.FilesScanned = 0; // collecting phase
+                    progress.CurrentFile = file;
+                    ReportProgressThrottled(progress, force: quickFiles.Count == 1);
+                    if (quickFiles.Count % 64 == 0)
+                        await HopToThreadPoolAsync().ConfigureAwait(false);
+                }
+            }
 
             if (progress != null)
+            {
                 progress.TotalFiles = quickFiles.Count;
+                ReportProgressThrottled(progress, force: true);
+            }
 
-            if (quickFiles.Count > 1)
+            if (quickFiles.Count == 0)
+                return results;
+
+            // Parallel only when clamd handles scans; YARA is single-threaded internally
+            if (quickFiles.Count > 1 && _clam.DaemonReady)
                 return await ScanFilesParallelAsync(quickFiles, mode, progress, ct).ConfigureAwait(false);
 
             foreach (var file in quickFiles)
@@ -219,7 +445,7 @@ public class ScannerEngine : IDisposable
             return results;
         }
 
-        // Full / custom bulk — stream files; never materialize whole drive into RAM
+        // Full / custom — sequential INSTREAM (2-way parallel flooded clamd → timeout streaks).
         var scanned = 0;
         foreach (var file in PathHelper.EnumerateFilesSafe(directory, skipDir))
         {
@@ -229,15 +455,17 @@ public class ScannerEngine : IDisposable
                 continue;
 
             scanned++;
-            if (progress != null && (scanned == 1 || scanned % 8 == 0))
+            if (progress != null)
             {
                 progress.CurrentFile = file;
                 progress.FilesScanned = scanned;
-                ReportProgressThrottled(progress);
+                if (progress.TotalFiles < scanned)
+                    progress.TotalFiles = scanned + 64;
+                ReportProgressThrottled(progress, force: scanned == 1);
             }
 
-            if (mode == ScanMode.Full && scanned % 64 == 0)
-                await Task.Yield();
+            if (scanned % 64 == 0)
+                await HopToThreadPoolAsync().ConfigureAwait(false);
 
             var result = await ScanFileAsync(file, mode, ct).ConfigureAwait(false);
             if (result.IsThreat)
@@ -247,6 +475,9 @@ public class ScannerEngine : IDisposable
                 results.Add(result);
             }
         }
+
+        if (progress != null && scanned > 0)
+            progress.TotalFiles = Math.Max(progress.TotalFiles, scanned);
 
         return results;
     }
@@ -276,52 +507,71 @@ public class ScannerEngine : IDisposable
         var bag = new System.Collections.Concurrent.ConcurrentBag<ScanResult>();
         var scanned = 0;
         var threatCount = 0;
+        const int batchSize = 24;
 
-        var tasks = files.Select(async file =>
+        for (var offset = 0; offset < files.Count; offset += batchSize)
         {
-            await _bulkParallelism.WaitAsync(ct).ConfigureAwait(false);
-            try
-            {
-                ct.ThrowIfCancellationRequested();
-                var n = Interlocked.Increment(ref scanned);
-                if (progress != null)
-                {
-                    progress.CurrentFile = file;
-                    progress.FilesScanned = n;
-                    ReportProgressThrottled(progress);
-                }
+            ct.ThrowIfCancellationRequested();
+            var batch = files.GetRange(offset, Math.Min(batchSize, files.Count - offset));
 
-                var result = await ScanFileAsync(file, mode, ct).ConfigureAwait(false);
-                if (result.IsThreat)
-                {
-                    Interlocked.Increment(ref threatCount);
-                    bag.Add(result);
-                }
-            }
-            finally
+            var tasks = batch.Select(async file =>
             {
-                _bulkParallelism.Release();
-            }
-        });
+                await _bulkParallelism.WaitAsync(ct).ConfigureAwait(false);
+                try
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var n = Interlocked.Increment(ref scanned);
+                    if (progress != null)
+                    {
+                        progress.CurrentFile = file;
+                        progress.FilesScanned = n;
+                        ReportProgressThrottled(progress);
+                    }
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+                    // Offload blocking TCP scan so the batch pipeline stays responsive
+                    var result = await Task.Run(
+                        async () => await ScanFileAsync(file, mode, ct).ConfigureAwait(false),
+                        ct).ConfigureAwait(false);
+                    if (result.IsThreat)
+                    {
+                        Interlocked.Increment(ref threatCount);
+                        bag.Add(result);
+                    }
+                }
+                finally
+                {
+                    _bulkParallelism.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
         if (progress != null)
             progress.ThreatsFound = threatCount;
         return bag.ToList();
     }
 
-    private void ReportProgressThrottled(ScanProgress progress)
+    private void ReportProgressThrottled(ScanProgress progress, bool force = false)
     {
         _progressCounter++;
         var now = DateTime.UtcNow;
-        if (_progressCounter % 8 != 0 && (now - _lastProgressReport).TotalMilliseconds < 300)
+        if (!force &&
+            _progressCounter % 4 != 0 &&
+            (now - _lastProgressReport).TotalMilliseconds < 150)
             return;
 
         _lastProgressReport = now;
         OnProgress?.Invoke(progress);
     }
 
-    public async Task<List<ScanResult>> RunScanAsync(ScanMode mode, CancellationToken ct = default)
+    /// <summary>
+    /// Runs Quick/Full scan on the thread pool so the WPF UI never freezes.
+    /// </summary>
+    public Task<List<ScanResult>> RunScanAsync(ScanMode mode, CancellationToken ct = default) =>
+        Task.Run(() => RunScanCoreAsync(mode, ct));
+
+    private async Task<List<ScanResult>> RunScanCoreAsync(ScanMode mode, CancellationToken ct)
     {
         await _scanLock.WaitAsync(ct).ConfigureAwait(false);
         Interlocked.Exchange(ref _isScanning, 1);
@@ -343,7 +593,7 @@ public class ScannerEngine : IDisposable
                 allResults.AddRange(await ScanDirectoryAsync(root, mode, progress, token).ConfigureAwait(false));
             }
 
-            RecordScanStats(progress.FilesScanned, allResults);
+            RecordManualScanStats(progress.FilesScanned, allResults);
             Logger.Info($"{mode} scan done: {allResults.Count} threats");
             return allResults;
         }
@@ -363,7 +613,10 @@ public class ScannerEngine : IDisposable
         }
     }
 
-    public async Task<List<ScanResult>?> TryRunScheduledScanAsync(ScanMode mode)
+    public Task<List<ScanResult>?> TryRunScheduledScanAsync(ScanMode mode) =>
+        Task.Run(() => TryRunScheduledScanCoreAsync(mode));
+
+    private async Task<List<ScanResult>?> TryRunScheduledScanCoreAsync(ScanMode mode)
     {
         if (!await _scanLock.WaitAsync(0).ConfigureAwait(false))
         {
@@ -397,6 +650,59 @@ public class ScannerEngine : IDisposable
             Interlocked.Exchange(ref _isScanning, 0);
             _scanLock.Release();
         }
+    }
+
+    public Task<List<ScanResult>> ExecuteLockedScanAsync(
+        Func<CancellationToken, Task<(List<ScanResult> Results, int FilesScanned)>> work,
+        CancellationToken ct) =>
+        Task.Run(() => ExecuteLockedScanCoreAsync(work, ct));
+
+    private async Task<List<ScanResult>> ExecuteLockedScanCoreAsync(
+        Func<CancellationToken, Task<(List<ScanResult> Results, int FilesScanned)>> work,
+        CancellationToken ct)
+    {
+        await _scanLock.WaitAsync(ct).ConfigureAwait(false);
+        Interlocked.Exchange(ref _isScanning, 1);
+        EnterBulkScan();
+        try
+        {
+            var token = ReplaceScanCts(ct).Token;
+            var (results, filesScanned) = await work(token).ConfigureAwait(false);
+            RecordManualScanStats(filesScanned, results);
+            return results;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        finally
+        {
+            ExitBulkScan();
+            Interlocked.Exchange(ref _isScanning, 0);
+            _scanLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Yields to the thread pool. Unlike Task.Yield(), does not return to the WPF UI SynchronizationContext.
+    /// </summary>
+    private static Task HopToThreadPoolAsync()
+    {
+        if (SynchronizationContext.Current == null)
+            return Task.CompletedTask;
+
+        var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        ThreadPool.QueueUserWorkItem(_ => tcs.TrySetResult(null));
+        return tcs.Task;
+    }
+
+    private void RecordManualScanStats(int filesScanned, List<ScanResult> results)
+    {
+        _settings.TotalFilesScanned += filesScanned;
+        _settings.TotalThreatsFound += CountActionableThreats(results);
+        _settings.LastManualScan = DateTime.Now;
+        var settings = _settings;
+        _ = Task.Run(() => SettingsService.Save(settings));
     }
 
     private void RecordScanStats(int filesScanned, List<ScanResult> results)
@@ -440,14 +746,22 @@ public class ScannerEngine : IDisposable
         }
     }
 
-    private sealed class BulkScanSession(ScannerEngine engine) : IDisposable
+    private sealed class BulkScanSession : IDisposable
     {
+        private readonly ScannerEngine _engine;
         private bool _disposed;
+
+        public BulkScanSession(ScannerEngine engine)
+        {
+            _engine = engine;
+            _engine.EnterBulkScan();
+        }
+
         public void Dispose()
         {
             if (_disposed) return;
             _disposed = true;
-            engine.ExitBulkScan();
+            _engine.ExitBulkScan();
         }
     }
 
@@ -457,6 +771,7 @@ public class ScannerEngine : IDisposable
         {
             _scanCts?.Cancel();
         }
+        _clam.CancelActiveScan();
     }
 
     public void Dispose()

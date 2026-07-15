@@ -6,10 +6,10 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel MaxWidth="640">
             <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,24"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24"/>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,12"
-                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                                 Background="{DynamicResource CardBackgroundBrush}" UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding LanguageLabel}" Margin="0,0,0,8"/>
                     <ComboBox ItemsSource="{Binding LanguageOptions}"
@@ -23,7 +23,7 @@
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,12"
-                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                                 Background="{DynamicResource CardBackgroundBrush}" UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding ScheduleLabel}" Margin="0,0,0,8"/>
                     <ComboBox ItemsSource="{Binding ScheduleOptions}"
@@ -38,7 +38,7 @@
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,12"
-                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                                 Background="{DynamicResource CardBackgroundBrush}" UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding SignatureUpdatesLabel}" FontWeight="SemiBold" Margin="0,0,0,12"/>
                     <CheckBox Content="{Binding SignatureUpdatesEnabledLabel}" IsChecked="{Binding SignatureUpdatesEnabled}" Margin="0,0,0,8"/>
@@ -47,31 +47,31 @@
                               SelectedItem="{Binding SelectedUpdateScheduleOption}"
                               DisplayMemberPath="Label" Margin="0,0,0,12"/>
                     <TextBlock Text="{Binding UpdateEndpointLabel}" FontSize="11"
-                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                     <TextBox Text="{Binding SignatureEndpoint}" Margin="0,0,0,12"/>
                     <CheckBox Content="{Binding CheckUpdatesOnStartupLabel}" IsChecked="{Binding CheckUpdatesOnStartup}" Margin="0,0,0,12"/>
                     <Button Command="{Binding UpdateSignaturesCommand}" HorizontalAlignment="Left"
                             Style="{StaticResource TgPrimaryButton}" Content="{Binding UpdateNowLabel}" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding SignatureStatus}" FontSize="12"
-                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                 </StackPanel>
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,12"
-                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                                 Background="{DynamicResource CardBackgroundBrush}" UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding ExclusionsLabel}" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding ExtensionsLabel}" FontSize="11"
-                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                     <TextBox Text="{Binding ExcludedExtensions}" Margin="0,0,0,12"/>
                     <TextBlock Text="{Binding FoldersLabel}" FontSize="11"
-                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                     <TextBox Text="{Binding ExcludedFolders}" AcceptsReturn="True" Height="60"/>
                 </StackPanel>
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,12"
-                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                                 Background="{DynamicResource CardBackgroundBrush}" UniformCornerRadius="8">
                 <StackPanel>
                     <TextBlock Text="{Binding MonitoredFoldersLabel}" Margin="0,0,0,8"/>
                     <TextBox Text="{Binding MonitoredFolders}" AcceptsReturn="True" Height="80"/>
@@ -79,7 +79,7 @@
             </materialDesign:Card>
 
             <materialDesign:Card Padding="20" Margin="0,0,0,12"
-                                 Background="{StaticResource CardBackgroundBrush}" UniformCornerRadius="8">
+                                 Background="{DynamicResource CardBackgroundBrush}" UniformCornerRadius="8">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,8">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -97,16 +97,16 @@
                              VerticalScrollBarVisibility="Auto" Height="180"
                              FontFamily="Consolas" FontSize="11"
                              Background="Transparent"
-                             Foreground="{StaticResource TextSecondaryBrush}"/>
+                             Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
             </materialDesign:Card>
 
-            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource BrandGreenBrush}" Margin="0,0,0,12"/>
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource BrandGreenBrush}" Margin="0,0,0,12"/>
 
             <StackPanel Orientation="Horizontal">
                 <Button Command="{Binding SaveCommand}" Margin="0,0,8,0" Height="40"
                         Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="{StaticResource BrandGreenBrush}"
+                        Background="{DynamicResource BrandGreenBrush}"
                         Content="{Binding SaveLabel}"/>
                 <Button Command="{Binding ExitCommand}" Height="40"
                         Style="{StaticResource MaterialDesignOutlinedButton}"

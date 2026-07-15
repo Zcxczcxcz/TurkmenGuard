@@ -48,7 +48,16 @@ public partial class ScanViewModel : ViewModelBase
         _services = services;
         _services.Scanner.OnProgress += OnProgress;
         RefreshLabels();
-        LocalizationService.LanguageChanged += RefreshLabels;
+        LocalizationService.LanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged()
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
+            RefreshLabels();
+        else
+            dispatcher.BeginInvoke(new Action(RefreshLabels));
     }
 
     private void RefreshLabels()
@@ -76,8 +85,9 @@ public partial class ScanViewModel : ViewModelBase
     private void OnProgress(ScanProgress p)
     {
         var now = DateTime.UtcNow;
+        // Keep UI responsive but avoid flooding the dispatcher during fast scans
         if (p.IsRunning && p.FilesScanned > 0 &&
-            (now - _lastProgressUi).TotalMilliseconds < 300 && p.FilesScanned % 10 != 0)
+            (now - _lastProgressUi).TotalMilliseconds < 120 && p.FilesScanned % 5 != 0)
             return;
 
         _lastProgressUi = now;
@@ -95,10 +105,17 @@ public partial class ScanViewModel : ViewModelBase
     private void ApplyProgress(ScanProgress p)
     {
         IsScanning = p.IsRunning;
-        IsIndeterminate = p.IsRunning && p.TotalFiles <= 0;
-        if (p.TotalFiles > 0)
+        var collecting = p.IsRunning && p.TotalFiles > 0 && p.FilesScanned == 0;
+        IsIndeterminate = p.IsRunning && (p.TotalFiles <= 0 || collecting);
+
+        if (collecting)
         {
-            ProgressValue = (double)p.FilesScanned / p.TotalFiles * 100;
+            ProgressValue = 0;
+            ProgressText = LocalizationService.Format("ScanCollecting", p.TotalFiles, Path.GetFileName(p.CurrentFile));
+        }
+        else if (p.TotalFiles > 0)
+        {
+            ProgressValue = Math.Min(100, (double)p.FilesScanned / p.TotalFiles * 100);
             ProgressText = LocalizationService.Format("ScanProgress", p.FilesScanned, p.TotalFiles, Path.GetFileName(p.CurrentFile));
         }
         else if (p.IsRunning)
@@ -127,7 +144,8 @@ public partial class ScanViewModel : ViewModelBase
         await RunCustomScanAsync(async token =>
         {
             var progress = new ScanProgress { IsRunning = true };
-            var results = await _services.Scanner.ScanDirectoryAsync(CustomPath, ScanMode.SingleFile, progress, token);
+            var results = await _services.Scanner.ScanDirectoryAsync(CustomPath, ScanMode.SingleFile, progress, token)
+                .ConfigureAwait(false);
             return (results, progress.FilesScanned);
         });
     }
@@ -151,7 +169,8 @@ public partial class ScanViewModel : ViewModelBase
             };
             OnProgress(progress);
 
-            var result = await _services.Scanner.ScanFileAsync(FilePath, ScanMode.SingleFile, token);
+            var result = await _services.Scanner.ScanFileAsync(FilePath, ScanMode.SingleFile, token)
+                .ConfigureAwait(false);
             progress.FilesScanned = 1;
             progress.IsRunning = false;
             OnProgress(progress);
@@ -169,28 +188,26 @@ public partial class ScanViewModel : ViewModelBase
         ThreatsFound = 0;
         ThreatResults.Clear();
         ProgressValue = 0;
+        ProgressText = LocalizationService.Get("ScanStarting");
 
         try
         {
-            using (_services.Scanner.BeginBulkScanSession())
-            {
-                var (results, filesScanned) = await scanFunc(_cts.Token).ConfigureAwait(true);
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                    () => PopulateResults(results),
-                    System.Windows.Threading.DispatcherPriority.Background);
-                ProgressText = results.Count > 0
-                    ? LocalizationService.Format("ThreatCount", results.Count)
-                    : LocalizationService.Get("ScanComplete");
-                _services.Settings.TotalFilesScanned += filesScanned;
-                _services.Settings.TotalThreatsFound += results.Sum(r =>
-                    r.Threats.Count(t => t.Severity >= ThreatSeverity.High));
-                _services.Settings.LastScheduledScan = DateTime.Now;
-                _ = Task.Run(() => SettingsService.Save(_services.Settings));
-            }
+            var results = await _services.Scanner.ExecuteLockedScanAsync(scanFunc, _cts.Token)
+                .ConfigureAwait(true);
+            await PopulateResultsOnUiAsync(results).ConfigureAwait(true);
+            ProgressText = results.Count > 0
+                ? LocalizationService.Format("ThreatCount", results.Count)
+                : LocalizationService.Get("ScanComplete");
+            _services.RequestDashboardRefresh();
         }
         catch (OperationCanceledException)
         {
             ProgressText = LocalizationService.Get("ScanCancelled");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Custom scan failed: {ex.Message}");
+            ProgressText = LocalizationService.Get("ScanError");
         }
         finally
         {
@@ -274,24 +291,44 @@ public partial class ScanViewModel : ViewModelBase
         ThreatsFound = 0;
         ThreatResults.Clear();
         ProgressValue = 0;
+        ProgressText = LocalizationService.Get("ScanStarting");
 
         try
         {
-            var results = await _services.Scanner.RunScanAsync(mode, _cts.Token).ConfigureAwait(true);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                () => PopulateResults(results),
-                System.Windows.Threading.DispatcherPriority.Background);
+            var results = await _services.Scanner.RunScanAsync(mode, _cts.Token)
+                .ConfigureAwait(true);
+            await PopulateResultsOnUiAsync(results).ConfigureAwait(true);
             ProgressText = LocalizationService.Get("ScanComplete");
+            _services.RequestDashboardRefresh();
         }
         catch (OperationCanceledException)
         {
             ProgressText = LocalizationService.Get("ScanCancelled");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"{mode} scan failed: {ex.Message}");
+            ProgressText = LocalizationService.Get("ScanError");
         }
         finally
         {
             IsScanning = false;
             IsIndeterminate = false;
         }
+    }
+
+    private async Task PopulateResultsOnUiAsync(List<ScanResult> results)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher == null)
+        {
+            PopulateResults(results);
+            return;
+        }
+
+        await dispatcher.InvokeAsync(
+            () => PopulateResults(results),
+            System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private void PopulateResults(List<ScanResult> results)

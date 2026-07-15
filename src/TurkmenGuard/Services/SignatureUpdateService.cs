@@ -233,6 +233,12 @@ public sealed class SignatureUpdateService : IDisposable
 
     private void Report(string message) => StatusChanged?.Invoke(message);
 
+    public void Restart()
+    {
+        _weeklyTimer.Stop();
+        Start();
+    }
+
     public void Dispose()
     {
         _weeklyTimer.Stop();

@@ -11,28 +11,45 @@ public static class DetectionFilter
         "PUA.", "PUP.", "PUA-", "PUP-",
         "Heuristics.", "Heuristic.",
         "Win.Tool.", "Win.Trojan.PUA", "Win.PUA", "Win.PUP",
+        "Win.Packer.", "Win.Malware.Heuristic",
         "Generic.", "Html.Phishing", "Html.Trojan",
         "SecuriteInfo.com.PUA", "SecuriteInfo.com.PUP",
-        "Susware.", "Grayware.", "Riskware."
+        "Susware.", "Grayware.", "Riskware.", "Adware.",
+        "Joke.", "Hoax.", "Spam."
     ];
 
     private static readonly string[] NoiseSubstrings =
     [
         ".PUA.", ".PUP.", ".Adware.", ".Dialer.", ".Downloader.",
-        "Unwanted", "Bundled", "InstallCore", "InstallMonetizer"
+        "Unwanted", "Bundled", "InstallCore", "InstallMonetizer",
+        ".Packed.", ".Packer.", "PotentiallyUnwanted"
     ];
 
     /// <summary>Broad YARA rules that match legitimate admin/dev scripts.</summary>
     private static readonly string[] HeuristicYaraMarkers =
     [
         "LOLBin_", "PS_Downloader", "Macro_", "Persist_", "WMI_",
-        "Batch_", "Lateral_", "Suspicious_", "Downloader_"
+        "Batch_", "Lateral_", "Suspicious_", "Downloader_",
+        "Obfuscat", "Encoded", "powershell_obfuscation", "script_dropper"
     ];
 
     public static bool IsNoiseSignature(string threatName)
     {
         if (string.IsNullOrWhiteSpace(threatName))
             return true;
+
+        // Never drop real malware families even if a noisy substring appears nearby
+        if (threatName.IndexOf("Trojan", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Worm", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Virus", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Ransom", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Backdoor", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Rootkit", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Spyware", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Coinminer", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("Miner.", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            threatName.IndexOf("EICAR", StringComparison.OrdinalIgnoreCase) >= 0)
+            return false;
 
         foreach (var prefix in NoisePrefixes)
         {

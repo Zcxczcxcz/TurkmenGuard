@@ -1,15 +1,23 @@
+// PHP webshells — require PHP open tag + dangerous sinks together.
+
 rule WebShell_PHP_Eval {
     meta:
         description = "PHP webshell with eval/exec"
         severity = "Critical"
         author = "TurkmenGuard"
     strings:
-        $eval = "eval(" nocase
-        $exec = "exec(" nocase
-        $system = "system(" nocase
         $php = "<?php"
+        $eval = "eval(" nocase
+        $assert = "assert(" nocase
+        $create = "create_function(" nocase
+        $get = "$_GET" nocase
+        $post = "$_POST" nocase
+        $req = "$_REQUEST" nocase
     condition:
-        filesize < 2MB and $php and 1 of ($eval, $exec, $system)
+        filesize < 512KB and
+        $php and
+        1 of ($eval, $assert, $create) and
+        1 of ($get, $post, $req)
 }
 
 rule WebShell_PHP_Base64_Decode {
@@ -18,12 +26,15 @@ rule WebShell_PHP_Base64_Decode {
         severity = "High"
         author = "TurkmenGuard"
     strings:
+        $php = "<?php"
         $b64 = "base64_decode" nocase
         $eval = "eval(" nocase
         $assert = "assert(" nocase
-        $php = "<?php"
+        $gz = "gzinflate" nocase
     condition:
-        filesize < 2MB and $php and $b64 and 1 of ($eval, $assert)
+        filesize < 512KB and
+        $php and $b64 and
+        1 of ($eval, $assert, $gz)
 }
 
 rule WebShell_PHP_Shell_Exec {
@@ -32,13 +43,19 @@ rule WebShell_PHP_Shell_Exec {
         severity = "High"
         author = "TurkmenGuard"
     strings:
-        $shell = "shell_exec" nocase
-        $pass = "passthru" nocase
-        $proc = "proc_open" nocase
-        $php_get = "_GET" nocase
-        $post = "_POST" nocase
+        $php = "<?php"
+        $shell = "shell_exec(" nocase
+        $pass = "passthru(" nocase
+        $proc = "proc_open(" nocase
+        $system = "system(" nocase
+        $get = "$_GET" nocase
+        $post = "$_POST" nocase
+        $cookie = "$_COOKIE" nocase
     condition:
-        filesize < 2MB and 1 of ($shell, $pass, $proc) and 1 of ($php_get, $post)
+        filesize < 512KB and
+        $php and
+        1 of ($shell, $pass, $proc, $system) and
+        1 of ($get, $post, $cookie)
 }
 
 rule WebShell_PHP_C99_R57 {
@@ -49,8 +66,9 @@ rule WebShell_PHP_C99_R57 {
     strings:
         $c99 = "c99shell" nocase
         $r57 = "r57shell" nocase
-        $wso = "wso.php" nocase
+        $wso = "WSO " nocase
         $b374k = "b374k" nocase
+        $php = "<?php"
     condition:
-        filesize < 5MB and any of them
+        filesize < 2MB and $php and any of ($c99, $r57, $wso, $b374k)
 }

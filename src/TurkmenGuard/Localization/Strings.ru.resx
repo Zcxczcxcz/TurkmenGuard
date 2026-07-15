@@ -5,6 +5,33 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppTitle" xml:space="preserve"><value>Türkmen Goragçy</value></data>
+  <data name="NotifyBrand" xml:space="preserve"><value>Turkmen Guard</value></data>
+  <data name="ThreatDetectedShort" xml:space="preserve"><value>Угроза заблокирована</value></data>
+  <data name="ThreatDetectedShortFile" xml:space="preserve"><value>Угроза: {0}</value></data>
+  <data name="LiveActivity" xml:space="preserve"><value>Живая активность</value></data>
+  <data name="ProtectionLive" xml:space="preserve"><value>Следим за папками и новыми процессами…</value></data>
+  <data name="ProtectionIdle" xml:space="preserve"><value>Включите защиту, чтобы начать мониторинг</value></data>
+  <data name="WaitingForActivity" xml:space="preserve"><value>Ожидание файлов или процессов…</value></data>
+  <data name="ActivityJustNow" xml:space="preserve"><value>Последняя активность: только что</value></data>
+  <data name="ActivitySecondsAgo" xml:space="preserve"><value>Последняя активность: {0} с назад</value></data>
+  <data name="ActivityMinutesAgo" xml:space="preserve"><value>Последняя активность: {0} мин назад</value></data>
+  <data name="RtStatFolders" xml:space="preserve"><value>Папки: {0}</value></data>
+  <data name="RtStatFiles" xml:space="preserve"><value>Файлов: {0}</value></data>
+  <data name="RtStatProcesses" xml:space="preserve"><value>Процессов: {0}</value></data>
+  <data name="RtStatThreats" xml:space="preserve"><value>Блокировок: {0}</value></data>
+  <data name="RtWatching" xml:space="preserve"><value>Наблюдение: {0}</value></data>
+  <data name="RtStopped" xml:space="preserve"><value>Мониторинг файлов остановлен</value></data>
+  <data name="RtHeartbeat" xml:space="preserve"><value>Активно: {0} папок · проверено файлов {1}</value></data>
+  <data name="RtQueued" xml:space="preserve"><value>Новый файл: {0}</value></data>
+  <data name="RtScanning" xml:space="preserve"><value>Скан {0}</value></data>
+  <data name="RtClean" xml:space="preserve"><value>ОК · {0}</value></data>
+  <data name="RtThreat" xml:space="preserve"><value>Угроза · {0}</value></data>
+  <data name="PmStarted" xml:space="preserve"><value>Мониторинг процессов запущен</value></data>
+  <data name="PmStopped" xml:space="preserve"><value>Мониторинг процессов остановлен</value></data>
+  <data name="PmNewProcess" xml:space="preserve"><value>Процесс · {0} (PID {1})</value></data>
+  <data name="PmProcessOk" xml:space="preserve"><value>ОК · процесс {0}</value></data>
+  <data name="PmProcessThreat" xml:space="preserve"><value>Угроза · {0}</value></data>
+  <data name="PmBlacklisted" xml:space="preserve"><value>Блок · {0} (PID {1})</value></data>
   <data name="BrandSubtitle" xml:space="preserve"><value>Государственная антивирусная система</value></data>
   <data name="Dashboard" xml:space="preserve"><value>Главная</value></data>
   <data name="FilesScanned" xml:space="preserve"><value>Просканировано файлов</value></data>
@@ -43,6 +70,9 @@
   <data name="Cancel" xml:space="preserve"><value>Отмена</value></data>
   <data name="ScanComplete" xml:space="preserve"><value>Сканирование завершено</value></data>
   <data name="ScanCancelled" xml:space="preserve"><value>Сканирование отменено</value></data>
+  <data name="ScanStarting" xml:space="preserve"><value>Запуск сканирования…</value></data>
+  <data name="ScanError" xml:space="preserve"><value>Ошибка сканирования. Подробности в логах.</value></data>
+  <data name="ScanCollecting" xml:space="preserve"><value>Сбор файлов: {0} — {1}</value></data>
   <data name="ScanProgress" xml:space="preserve"><value>{0}/{1} — {2}</value></data>
   <data name="ThreatCount" xml:space="preserve"><value>Угроз: {0}</value></data>
   <data name="RecentEvents" xml:space="preserve"><value>Последние события</value></data>

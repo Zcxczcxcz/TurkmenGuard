@@ -93,6 +93,13 @@ public sealed class YaraScanner : IDisposable
         if (!_initialized || _rules == null || !File.Exists(filePath))
             return threats;
 
+        var length = ScanPolicy.TryGetFileLength(filePath);
+        if (length < 0 || length > ScanPolicy.MaxYaraFileBytes)
+            return threats;
+
+        if (!ScanPolicy.CanOpenForScan(filePath))
+            return threats;
+
         lock (_scanLock)
         {
             if (_disposed || _rules == null)
@@ -102,23 +109,63 @@ public sealed class YaraScanner : IDisposable
             {
                 var scanner = new Scanner();
                 var results = scanner.ScanFile(filePath, _rules);
-
-                foreach (var result in results)
-                {
-                    var threat = MapResult(filePath, result);
-                    if (ThreatSeverityRules.ShouldReport(threat.Severity))
-                        threats.Add(threat);
-                    else
-                        Logger.Info("Advisory YARA: " + threat.ThreatName + " [" + filePath + "]");
-                }
+                CollectResults(filePath, results, threats, regionLabel: null);
             }
+            catch (IOException) { /* locked file */ }
+            catch (UnauthorizedAccessException) { }
             catch (Exception ex)
             {
-                Logger.Warn("YARA scan [" + filePath + "]: " + ex.Message);
+                Logger.Warn($"YARA skip [{Path.GetFileName(filePath)}]: {ex.Message}");
             }
         }
 
         return threats;
+    }
+
+    /// <summary>Scan a memory buffer (large-file region). Threats attributed to original path.</summary>
+    public List<ThreatInfo> ScanMemory(byte[] data, string originalPath, string? regionLabel = null)
+    {
+        var threats = new List<ThreatInfo>();
+        if (!_initialized || _rules == null || data == null || data.Length == 0)
+            return threats;
+
+        if (data.Length > ScanPolicy.MaxYaraFileBytes)
+            return threats;
+
+        lock (_scanLock)
+        {
+            if (_disposed || _rules == null)
+                return threats;
+
+            try
+            {
+                var scanner = new Scanner();
+                var results = scanner.ScanMemory(data, _rules);
+                CollectResults(originalPath, results, threats, regionLabel);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"YARA memory skip [{Path.GetFileName(originalPath)}]: {ex.Message}");
+            }
+        }
+
+        return threats;
+    }
+
+    private void CollectResults(
+        string filePath, List<YaraScanResult> results, List<ThreatInfo> threats, string? regionLabel)
+    {
+        foreach (var result in results)
+        {
+            var threat = MapResult(filePath, result);
+            if (!string.IsNullOrEmpty(regionLabel))
+                threat.Details = $"{threat.Details} [large:{regionLabel}]";
+
+            if (ThreatSeverityRules.ShouldReport(threat.Severity))
+                threats.Add(threat);
+            else
+                Logger.Info("Advisory YARA: " + threat.ThreatName + " [" + filePath + "]");
+        }
     }
 
     private static ThreatInfo MapResult(string filePath, YaraScanResult result)

@@ -18,6 +18,7 @@ public class AppSettings
     public string Theme { get; set; } = "corporate";
     public string ScanSchedule { get; set; } = "never";
     public DateTime? LastScheduledScan { get; set; }
+    public DateTime? LastManualScan { get; set; }
     public bool NotificationsEnabled { get; set; } = true;
     public bool ProcessMonitorEnabled { get; set; } = false;
     public ExclusionSettings Exclusions { get; set; } = new();
@@ -32,24 +33,31 @@ public class AppSettings
     public DateTime? LastSignatureUpdate { get; set; }
     public string? LastSignatureVersion { get; set; }
 
+    /// <summary>
+    /// Technical skips only (speed / OS locks) — NOT a software whitelist.
+    /// Malware in Program Files, AppData, browsers, IDEs is still scanned.
+    /// </summary>
     private static readonly string[] SkipPathFragments =
     [
-        "\\node_modules\\",
-        "\\.git\\",
-        "\\.nuget\\",
-        "\\packages\\",
-        "\\AppData\\Local\\Programs\\",
-        "\\AppData\\Local\\Microsoft\\",
-        "\\AppData\\Local\\Temp\\",
-        "\\Temp\\",
-        "\\Cache\\",
-        "\\Cached\\",
-        "\\GPUCache\\",
-        "\\Code Cache\\",
+        "\\$Recycle.Bin\\",
+        "\\System Volume Information\\",
+        // Hard-link forests — weeks of scan, almost no unique detections
         "\\Windows\\WinSxS\\",
         "\\Windows\\Installer\\",
-        "\\$Recycle.Bin\\",
-        "\\System Volume Information\\"
+        "\\Windows\\assembly\\",
+        "\\Windows\\Servicing\\",
+        "\\Windows\\SoftwareDistribution\\",
+        "\\Windows\\Logs\\",
+        "\\Windows\\Prefetch\\",
+        // Dev trees — huge file counts, almost never unique malware
+        "\\node_modules\\",
+        "\\.git\\",
+        "\\__pycache__\\",
+        "\\.nuget\\",
+        // Engine caches (binary blobs, not user programs)
+        "\\GPUCache\\",
+        "\\Code Cache\\",
+        "\\ShaderCache\\",
     ];
 
     private static readonly string[] SkipDirectoryNames =
@@ -57,7 +65,11 @@ public class AppSettings
         "$Recycle.Bin",
         "System Volume Information",
         "Recovery",
-        "Config.Msi"
+        "Config.Msi",
+        "WinSxS",
+        "node_modules",
+        ".git",
+        "__pycache__",
     ];
 
     public bool ShouldSkipDirectory(string directoryPath)
@@ -67,6 +79,9 @@ public class AppSettings
 
         try
         {
+            if (TrustedPaths.IsTrusted(directoryPath))
+                return true;
+
             var name = Path.GetFileName(directoryPath.TrimEnd('\\', '/'));
             if (SkipDirectoryNames.Any(n => name.Equals(n, StringComparison.OrdinalIgnoreCase)))
                 return true;
@@ -104,6 +119,9 @@ public class AppSettings
 
         try
         {
+            if (TrustedPaths.IsTrusted(filePath))
+                return true;
+
             var full = Path.GetFullPath(filePath);
             var ext = Path.GetExtension(full);
 

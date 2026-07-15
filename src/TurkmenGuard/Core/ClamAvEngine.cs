@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -7,9 +8,8 @@ using TurkmenGuard.Services;
 namespace TurkmenGuard.Core;
 
 /// <summary>
-/// Full ClamAV integration via bundled clamd + clamdscan (libclamav).
-/// Loads main.cvd + daily.cvd + bytecode.cvd — all signature types (.ndb, .ldb, .hdb, .hsb).
-/// Falls back to clamscan.exe only for explicit single-file scans when the daemon is down.
+/// Full ClamAV integration via bundled clamd (TCP SCAN) + optional clamscan fallback.
+/// Per-file clamdscan.exe is avoided — spawning it for every file made Quick Scan crawl.
 /// </summary>
 public sealed class ClamAvEngine : IDisposable
 {
@@ -18,13 +18,21 @@ public sealed class ClamAvEngine : IDisposable
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly object _daemonLock = new();
+    private readonly object _scanProcessLock = new();
+    // One INSTREAM at a time keeps clamd responsive; Quick still pipelines via short timeouts
+    private readonly SemaphoreSlim _tcpGate = new(1, 1);
     private Process? _clamdProcess;
+    private Process? _activeScanProcess;
     private System.Threading.Timer? _healthTimer;
     private volatile bool _daemonReady;
     private bool _disposed;
+    private int _timeoutStreak;
 
     public bool IsAvailable { get; private set; }
     public bool DaemonReady => _daemonReady;
+    public bool LastScanTimedOut { get; private set; }
+    /// <summary>Consecutive INSTREAM failures (connect/IO/empty). Reset on success.</summary>
+    public int TimeoutStreak => Volatile.Read(ref _timeoutStreak);
     public string? LastError { get; private set; }
     public string Version { get; private set; } = "";
     public int DatabaseCount { get; private set; }
@@ -79,54 +87,261 @@ public sealed class ClamAvEngine : IDisposable
         }
     }
 
-    public List<ThreatInfo> Scan(string filePath, int timeoutMs = 120_000, bool allowClamScanFallback = false)
+    public List<ThreatInfo> Scan(string filePath, int timeoutMs = 120_000, bool allowClamScanFallback = false, long maxBytes = 0)
     {
         var threats = new List<ThreatInfo>();
+        LastScanTimedOut = false;
         if (!IsAvailable || !File.Exists(filePath))
             return threats;
 
+        if (maxBytes <= 0)
+            maxBytes = ScanPolicy.MaxFullClamFileBytes;
+
+        // Under load, shrink work so clamd recovers instead of timing out every file
+        var streak = TimeoutStreak;
+        if (streak >= 8)
+            maxBytes = Math.Min(maxBytes, 2L * 1024 * 1024);
+        if (streak >= 20)
+            maxBytes = Math.Min(maxBytes, 512L * 1024);
+        if (streak >= 8)
+            timeoutMs = Math.Min(timeoutMs, 1_500);
+
         try
         {
-            string? output;
+            string? output = null;
             if (_daemonReady)
             {
-                output = RunProcess(PathHelper.ClamdScanExe, BuildClamdScanArgs(filePath), PathHelper.ClamAvDir, timeoutMs);
+                // INSTREAM streams bytes to clamd — nSCAN hangs on Windows path checks.
+                var outcome = ScanViaInstreamFile(filePath, timeoutMs, maxBytes);
+                output = outcome.Output;
+                LastScanTimedOut = outcome.TimedOut;
             }
             else if (allowClamScanFallback)
             {
                 output = RunProcess(PathHelper.ClamScanExe, BuildClamScanArgs(filePath), PathHelper.ClamAvDir, timeoutMs);
             }
-            else
-            {
-                return threats;
-            }
 
-            if (string.IsNullOrWhiteSpace(output))
-                return threats;
-
-            foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                var m = FoundLine.Match(line.Trim());
-                if (!m.Success)
-                    continue;
-
-                var threatName = m.Groups[2].Value.Trim();
-                threats.Add(new ThreatInfo
-                {
-                    FilePath = filePath,
-                    ThreatName = threatName,
-                    Method = DetectionMethod.ClamAV,
-                    Severity = MapSeverity(threatName),
-                    Details = $"ClamAV: {threatName}"
-                });
-            }
+            ParseFoundLines(output, filePath, threats, detailPrefix: "ClamAV");
         }
         catch (Exception ex)
         {
-            Logger.Warn($"ClamAV scan [{filePath}]: {ex.Message}");
+            Logger.Warn($"ClamAV scan [{Path.GetFileName(filePath)}]: {ex.Message}");
         }
 
         return threats;
+    }
+
+    /// <summary>
+    /// Scan an in-memory slice (large-file PE/overlay/edges) via zINSTREAM.
+    /// Threats are attributed to <paramref name="originalPath"/>.
+    /// </summary>
+    public List<ThreatInfo> ScanBytes(byte[] data, string originalPath, int timeoutMs = 5_000, string? regionLabel = null)
+    {
+        var threats = new List<ThreatInfo>();
+        LastScanTimedOut = false;
+        if (!IsAvailable || !_daemonReady || data == null || data.Length == 0)
+            return threats;
+
+        if (data.Length > ScanPolicy.MaxFullClamFileBytes)
+            return threats;
+
+        var streak = TimeoutStreak;
+        if (streak >= 8)
+            timeoutMs = Math.Min(timeoutMs, 1_500);
+
+        try
+        {
+            var outcome = ScanViaInstreamBytes(data, timeoutMs);
+            LastScanTimedOut = outcome.TimedOut;
+            var prefix = string.IsNullOrEmpty(regionLabel)
+                ? "ClamAV/large"
+                : $"ClamAV/large:{regionLabel}";
+            ParseFoundLines(outcome.Output, originalPath, threats, prefix);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"ClamAV ScanBytes [{Path.GetFileName(originalPath)}]: {ex.Message}");
+        }
+
+        return threats;
+    }
+
+    private void ParseFoundLines(string? output, string filePath, List<ThreatInfo> threats, string detailPrefix)
+    {
+        if (string.IsNullOrWhiteSpace(output))
+            return;
+
+        foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.IndexOf("ERROR", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                trimmed.EndsWith(" OK", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.Equals("stream: OK", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var m = FoundLine.Match(trimmed);
+            if (!m.Success)
+                continue;
+
+            var threatName = m.Groups[2].Value.Trim();
+            threats.Add(new ThreatInfo
+            {
+                FilePath = filePath,
+                ThreatName = threatName,
+                Method = DetectionMethod.ClamAV,
+                Severity = MapSeverity(threatName),
+                Details = $"{detailPrefix}: {threatName}"
+            });
+        }
+    }
+
+    private readonly struct InstreamResult
+    {
+        public readonly string? Output;
+        public readonly bool TimedOut;
+        public InstreamResult(string? output, bool timedOut)
+        {
+            Output = output;
+            TimedOut = timedOut;
+        }
+    }
+
+    private InstreamResult ScanViaInstreamFile(string filePath, int timeoutMs, long maxBytes)
+    {
+        long length;
+        try { length = new FileInfo(filePath).Length; }
+        catch { return new InstreamResult(null, timedOut: false); }
+
+        if (length <= 0 || length > maxBytes)
+            return new InstreamResult("stream: OK", timedOut: false);
+
+        return WithInstreamSession(timeoutMs, net =>
+        {
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var buffer = new byte[128 * 1024];
+            int read;
+            while ((read = fs.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                var sizeBe = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(read));
+                net.Write(sizeBe, 0, 4);
+                net.Write(buffer, 0, read);
+            }
+        });
+    }
+
+    private InstreamResult ScanViaInstreamBytes(byte[] data, int timeoutMs) =>
+        WithInstreamSession(timeoutMs, net =>
+        {
+            var offset = 0;
+            while (offset < data.Length)
+            {
+                var chunk = Math.Min(128 * 1024, data.Length - offset);
+                var sizeBe = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(chunk));
+                net.Write(sizeBe, 0, 4);
+                net.Write(data, offset, chunk);
+                offset += chunk;
+            }
+        });
+
+    /// <summary>zINSTREAM session: caller writes data chunks; we send EOF and read the reply.</summary>
+    private InstreamResult WithInstreamSession(int timeoutMs, Action<NetworkStream> writeBody)
+    {
+        var gateWait = Math.Min(Math.Max(timeoutMs, 500), 1_200);
+        if (!_tcpGate.Wait(gateWait))
+        {
+            NoteTimeout();
+            return new InstreamResult(null, timedOut: true);
+        }
+
+        try
+        {
+            using var client = new TcpClient { NoDelay = true };
+            var ar = client.BeginConnect("127.0.0.1", 3310, null, null);
+            if (!ar.AsyncWaitHandle.WaitOne(800))
+            {
+                try { client.Close(); } catch { /* ignore */ }
+                NoteTimeout();
+                return new InstreamResult(null, timedOut: true);
+            }
+
+            try { client.EndConnect(ar); }
+            catch
+            {
+                NoteTimeout();
+                return new InstreamResult(null, timedOut: true);
+            }
+
+            client.ReceiveTimeout = timeoutMs;
+            client.SendTimeout = Math.Min(timeoutMs, 2_500);
+
+            using var net = client.GetStream();
+            var cmd = Encoding.ASCII.GetBytes("zINSTREAM");
+            net.Write(cmd, 0, cmd.Length);
+            net.WriteByte(0);
+
+            writeBody(net);
+
+            net.Write(BitConverter.GetBytes(0), 0, 4);
+            net.Flush();
+
+            using var reader = new StreamReader(net, Encoding.ASCII, false, 4096, leaveOpen: true);
+            var line = reader.ReadLine();
+            if (string.IsNullOrEmpty(line))
+            {
+                NoteTimeout();
+                return new InstreamResult(null, timedOut: true);
+            }
+
+            Interlocked.Exchange(ref _timeoutStreak, 0);
+            return new InstreamResult(line, timedOut: false);
+        }
+        catch (IOException)
+        {
+            NoteTimeout();
+            return new InstreamResult(null, timedOut: true);
+        }
+        catch (SocketException)
+        {
+            NoteTimeout();
+            return new InstreamResult(null, timedOut: true);
+        }
+        finally
+        {
+            _tcpGate.Release();
+        }
+    }
+
+    private void NoteTimeout()
+    {
+        var streak = Interlocked.Increment(ref _timeoutStreak);
+        if (streak == 1 || streak % 25 == 0)
+            Logger.Warn($"ClamAV INSTREAM slow/timeout (streak={streak}) — file skipped for ClamAV, scan continues");
+
+        if (streak == 12)
+            Logger.Warn("ClamAV INSTREAM overloaded — shrinking file size/timeout until it recovers");
+    }
+
+    public void CancelActiveScan()
+    {
+        lock (_scanProcessLock)
+        {
+            try
+            {
+                var proc = _activeScanProcess;
+                if (proc == null || proc.HasExited)
+                    return;
+                proc.Kill();
+                proc.WaitForExit(2000);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"ClamAV cancel: {ex.Message}");
+            }
+            finally
+            {
+                _activeScanProcess = null;
+            }
+        }
     }
 
     private static ThreatSeverity MapSeverity(string name)
@@ -202,23 +417,26 @@ public sealed class ClamAvEngine : IDisposable
             if (_clamdProcess == null)
                 return false;
 
-            for (var i = 0; i < 40; i++)
+            // CVD load can take 20–60s on first start; wait up to ~90s for TCP 3310.
+            for (var i = 0; i < 180; i++)
             {
                 Thread.Sleep(500);
-                if (_clamdProcess.HasExited)
-                {
-                    LastError = "clamd exited during startup";
-                    return false;
-                }
 
                 if (IsDaemonListening())
                 {
                     _daemonReady = true;
+                    Logger.Info($"ClamAV daemon listening after ~{(i + 1) * 0.5:0.0}s");
                     return true;
+                }
+
+                if (_clamdProcess.HasExited && i >= 6)
+                {
+                    LastError = "clamd exited during startup";
+                    return false;
                 }
             }
 
-            LastError = "clamd startup timeout";
+            LastError = "clamd startup timeout (databases still loading?)";
             StopDaemonInternal();
             return false;
         }
@@ -278,7 +496,7 @@ public sealed class ClamAvEngine : IDisposable
     private static string BuildClamdScanArgs(string filePath) =>
         $"--config-file=\"{PathHelper.ClamdScanConf}\" --no-summary --stdout \"{filePath}\"";
 
-    private static string? RunProcess(string exe, string args, string workDir, int timeoutMs = 120_000)
+    private string? RunProcess(string exe, string args, string workDir, int timeoutMs = 120_000)
     {
         var stdout = new StringBuilder();
         var stderr = new StringBuilder();
@@ -309,30 +527,47 @@ public sealed class ClamAvEngine : IDisposable
         };
 
         proc.Start();
-        proc.BeginOutputReadLine();
-        proc.BeginErrorReadLine();
-        try { proc.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { /* ignore */ }
+        lock (_scanProcessLock)
+            _activeScanProcess = proc;
 
-        if (!proc.WaitForExit(timeoutMs))
+        try
         {
-            try
+            proc.BeginOutputReadLine();
+            proc.BeginErrorReadLine();
+            try { proc.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { /* ignore */ }
+
+            if (!proc.WaitForExit(timeoutMs))
             {
-                proc.Kill();
-                proc.WaitForExit(5000);
+                try
+                {
+                    proc.Kill();
+                    proc.WaitForExit(5000);
+                }
+                catch { /* ignore */ }
+
+                Logger.Warn($"ClamAV scan timed out after {timeoutMs}ms");
+                return null;
             }
-            catch { /* ignore */ }
 
-            Logger.Warn($"ClamAV scan timed out after {timeoutMs}ms");
-            return null;
+            proc.WaitForExit(2000);
+
+            if (proc.ExitCode == 2 && stdout.Length == 0)
+                Logger.Warn($"ClamAV error: {stderr.ToString().Trim()}");
+
+            return stdout.ToString();
         }
-
-        proc.WaitForExit(2000);
-
-        if (proc.ExitCode == 2 && stdout.Length == 0)
-            Logger.Warn($"ClamAV error: {stderr.ToString().Trim()}");
-
-        return stdout.ToString();
+        finally
+        {
+            lock (_scanProcessLock)
+            {
+                if (ReferenceEquals(_activeScanProcess, proc))
+                    _activeScanProcess = null;
+            }
+        }
     }
+
+    // ClamAV rejects UTF-8 BOM configs ("Unknown option DatabaseDirectory").
+    private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     private static void EnsureConfigFiles()
     {
@@ -343,25 +578,34 @@ public sealed class ClamAvEngine : IDisposable
         var db = PathHelper.ClamDatabaseDir.Replace("\\", "/");
         var logDir = PathHelper.ClamLogDir.Replace("\\", "/");
 
-        WriteIfMissing(PathHelper.ClamdConf, $"""
+        // Always rewrite clamd.conf — Foreground yes + no BOM (required for daemon).
+        WriteConfig(PathHelper.ClamdConf, $"""
             DatabaseDirectory {db}
             LogFile {logDir}/clamd.log
             PidFile {logDir}/clamd.pid
             TCPSocket 3310
             TCPAddr 127.0.0.1
-            Foreground no
+            Foreground yes
+            MaxThreads 3
+            MaxQueue 64
+            MaxFileSize 10M
+            MaxScanSize 20M
+            StreamMaxLength 10M
+            ReadTimeout 20
+            CommandReadTimeout 8
+            ConcurrentDatabaseReload no
             """);
 
-        WriteIfMissing(PathHelper.ClamdScanConf, """
+        WriteConfigIfMissing(PathHelper.ClamdScanConf, """
             TCPSocket 3310
             TCPAddr 127.0.0.1
             """);
 
-        WriteIfMissing(PathHelper.ClamScanConf, $"""
+        WriteConfigIfMissing(PathHelper.ClamScanConf, $"""
             DatabaseDirectory {db}
             """);
 
-        WriteIfMissing(PathHelper.FreshClamConf, $"""
+        WriteConfigIfMissing(PathHelper.FreshClamConf, $"""
             DatabaseDirectory {db}
             UpdateLogFile {logDir}/freshclam.log
             DNSDatabaseInfo current.cvd.clamav.net
@@ -371,10 +615,32 @@ public sealed class ClamAvEngine : IDisposable
             """);
     }
 
-    private static void WriteIfMissing(string path, string content)
+    private static void WriteConfigIfMissing(string path, string content)
     {
-        if (!File.Exists(path))
-            File.WriteAllText(path, content, Encoding.UTF8);
+        if (!File.Exists(path) || HasUtf8Bom(path))
+            WriteConfig(path, content);
+    }
+
+    private static void WriteConfig(string path, string content)
+    {
+        // Trim indent from raw string literals; ClamAV is picky about leading spaces.
+        var lines = content.Replace("\r\n", "\n").Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0);
+        File.WriteAllText(path, string.Join("\n", lines) + "\n", Utf8NoBom);
+    }
+
+    private static bool HasUtf8Bom(string path)
+    {
+        try
+        {
+            using var fs = File.OpenRead(path);
+            return fs.Length >= 3 && fs.ReadByte() == 0xEF && fs.ReadByte() == 0xBB && fs.ReadByte() == 0xBF;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private string? DetectVersion()
@@ -419,5 +685,7 @@ public sealed class ClamAvEngine : IDisposable
             StopDaemonInternal();
             IsAvailable = false;
         }
+
+        try { _tcpGate.Dispose(); } catch { /* ignore */ }
     }
 }

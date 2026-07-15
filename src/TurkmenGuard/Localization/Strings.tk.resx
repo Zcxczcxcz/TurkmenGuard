@@ -5,6 +5,33 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppTitle" xml:space="preserve"><value>Türkmen Goragçy</value></data>
+  <data name="NotifyBrand" xml:space="preserve"><value>Turkmen Guard</value></data>
+  <data name="ThreatDetectedShort" xml:space="preserve"><value>Howp ýatyryldy</value></data>
+  <data name="ThreatDetectedShortFile" xml:space="preserve"><value>Howp: {0}</value></data>
+  <data name="LiveActivity" xml:space="preserve"><value>Janly hereket</value></data>
+  <data name="ProtectionLive" xml:space="preserve"><value>Bukjalar we täze prosesler gözegçilikde…</value></data>
+  <data name="ProtectionIdle" xml:space="preserve"><value>Gözegçiligi başlatmak üçin goragy açyň</value></data>
+  <data name="WaitingForActivity" xml:space="preserve"><value>Faýl ýa-da proses garaşylýar…</value></data>
+  <data name="ActivityJustNow" xml:space="preserve"><value>Soňky hereket: şu wagt</value></data>
+  <data name="ActivitySecondsAgo" xml:space="preserve"><value>Soňky hereket: {0} s öň</value></data>
+  <data name="ActivityMinutesAgo" xml:space="preserve"><value>Soňky hereket: {0} min öň</value></data>
+  <data name="RtStatFolders" xml:space="preserve"><value>Bukjalar: {0}</value></data>
+  <data name="RtStatFiles" xml:space="preserve"><value>Faýllar: {0}</value></data>
+  <data name="RtStatProcesses" xml:space="preserve"><value>Prosesler: {0}</value></data>
+  <data name="RtStatThreats" xml:space="preserve"><value>Blok: {0}</value></data>
+  <data name="RtWatching" xml:space="preserve"><value>Gözegçilik: {0}</value></data>
+  <data name="RtStopped" xml:space="preserve"><value>Faýl gözegçiligi duruzyldy</value></data>
+  <data name="RtHeartbeat" xml:space="preserve"><value>Işjeň: {0} bukja · {1} faýl barlanyldy</value></data>
+  <data name="RtQueued" xml:space="preserve"><value>Täze faýl: {0}</value></data>
+  <data name="RtScanning" xml:space="preserve"><value>Barlag {0}</value></data>
+  <data name="RtClean" xml:space="preserve"><value>OK · {0}</value></data>
+  <data name="RtThreat" xml:space="preserve"><value>Howp · {0}</value></data>
+  <data name="PmStarted" xml:space="preserve"><value>Proses gözegçiligi başlady</value></data>
+  <data name="PmStopped" xml:space="preserve"><value>Proses gözegçiligi duruzyldy</value></data>
+  <data name="PmNewProcess" xml:space="preserve"><value>Proses · {0} (PID {1})</value></data>
+  <data name="PmProcessOk" xml:space="preserve"><value>OK · proses {0}</value></data>
+  <data name="PmProcessThreat" xml:space="preserve"><value>Howp · {0}</value></data>
+  <data name="PmBlacklisted" xml:space="preserve"><value>Blok · {0} (PID {1})</value></data>
   <data name="BrandSubtitle" xml:space="preserve"><value>Döwlet antivirus ulgamy</value></data>
   <data name="Dashboard" xml:space="preserve"><value>Baş panel</value></data>
   <data name="FilesScanned" xml:space="preserve"><value>Barlanan faýllar</value></data>
@@ -43,6 +70,9 @@
   <data name="Cancel" xml:space="preserve"><value>Ýatyr</value></data>
   <data name="ScanComplete" xml:space="preserve"><value>Barlag tamamlandy</value></data>
   <data name="ScanCancelled" xml:space="preserve"><value>Barlag ýatyryldy</value></data>
+  <data name="ScanStarting" xml:space="preserve"><value>Barlag başlaýar…</value></data>
+  <data name="ScanError" xml:space="preserve"><value>Barlag şowsuz. Jikme-jiklikler loglarda.</value></data>
+  <data name="ScanCollecting" xml:space="preserve"><value>Faýllar ýygnalýar: {0} — {1}</value></data>
   <data name="ScanProgress" xml:space="preserve"><value>{0}/{1} — {2}</value></data>
   <data name="ThreatCount" xml:space="preserve"><value>Howplar: {0}</value></data>
   <data name="RecentEvents" xml:space="preserve"><value>Soňky wakalar</value></data>

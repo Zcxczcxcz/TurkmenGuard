@@ -22,7 +22,7 @@ public class NotificationService : IDisposable
         {
             Icon = SystemIcons.Shield,
             Visible = true,
-            Text = LocalizationService.AppTitle
+            Text = LocalizationService.Get("NotifyBrand")
         };
         _trayIcon.DoubleClick += OnTrayDoubleClick;
         BuildContextMenu();
@@ -53,16 +53,34 @@ public class NotificationService : IDisposable
         RunOnUiThread(() =>
         {
             if (_trayIcon == null) return;
-            _trayIcon.ShowBalloonTip(5000,
-                LocalizationService.Get("ThreatDetected"),
-                $"{threat.ThreatName}\n{Path.GetFileName(threat.FilePath)}",
+            var file = string.IsNullOrWhiteSpace(threat.FilePath)
+                ? ""
+                : Path.GetFileName(threat.FilePath);
+            var body = string.IsNullOrEmpty(file)
+                ? LocalizationService.Get("ThreatDetectedShort")
+                : LocalizationService.Format("ThreatDetectedShortFile", file);
+
+            _trayIcon.ShowBalloonTip(4000,
+                LocalizationService.Get("NotifyBrand"),
+                body,
                 ToolTipIcon.Warning);
         });
     }
 
     public void ShowInfo(string title, string message) =>
         RunOnUiThread(() =>
-            _trayIcon?.ShowBalloonTip(3000, title, message, ToolTipIcon.Info));
+            _trayIcon?.ShowBalloonTip(
+                3000,
+                LocalizationService.Get("NotifyBrand"),
+                string.IsNullOrWhiteSpace(message) ? title : Truncate(message, 80),
+                ToolTipIcon.Info));
+
+    private static string Truncate(string text, int max)
+    {
+        text = text.Replace('\r', ' ').Replace('\n', ' ').Trim();
+        if (text.Length <= max) return text;
+        return text.Substring(0, max - 1) + "…";
+    }
 
     public void Dispose() => DisposeTray();
 
