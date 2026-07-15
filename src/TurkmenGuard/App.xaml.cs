@@ -27,6 +27,7 @@ public partial class App : Application
             Logger.Error($"Unhandled UI exception: {args.Exception}");
             args.Handled = true;
         };
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => Logger.FlushOnExit();
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
             if (args.ExceptionObject is Exception ex)

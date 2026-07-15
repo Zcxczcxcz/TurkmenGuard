@@ -4,7 +4,7 @@ using TurkmenGuard.Security;
 using TurkmenGuard.Services;
 
 Console.WriteLine("╔══════════════════════════════════════════════╗");
-Console.WriteLine("║   TurkmenGuard v4.7.2 — Integration Tests    ║");
+Console.WriteLine("║   TurkmenGuard v4.7.4 — Integration Tests    ║");
 Console.WriteLine("╚══════════════════════════════════════════════╝\n");
 
 var passed = 0;
@@ -19,6 +19,7 @@ void Assert(string name, bool condition)
 var settings = new AppSettings();
 settings.Exclusions.Extensions = ScanPolicy.GetDefaultExcludedExtensions().ToList();
 var scanner = new ScannerEngine(settings);
+scanner.WaitForYaraReady();
 
 if (scanner.ClamAvAvailable)
 {
@@ -88,7 +89,7 @@ WriteSample(credTheft, "sekurlsa::logonpasswords mimikatz dump");
 var credResult = await scanner.ScanFileAsync(credTheft);
 Assert("Credential theft YARA rule", credResult.IsThreat);
 
-var amsiBypass = Path.Combine(samplesDir, "amsi_test.ps1");
+var amsiBypass = Path.Combine(samplesDir, "amsi_test.dat");
 WriteSample(amsiBypass,
     "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiContext').SetValue($null,$true)");
 var amsiResult = await scanner.ScanFileAsync(amsiBypass);
@@ -145,6 +146,43 @@ catch (IOException ex)
 }
 
 Assert("Entropy threshold = 7.95", EntropyAnalyzer.SuspiciousThreshold == 7.95);
+
+var nonPeLarge = Path.Combine(samplesDir, "nonpe_large.bin");
+try
+{
+    using (var fs = File.Create(nonPeLarge))
+    {
+        fs.SetLength(10L * 1024 * 1024);
+        fs.Position = 5L * 1024 * 1024;
+        var marker = System.Text.Encoding.ASCII.GetBytes("TURKMENGUARD_TEST_VIRUS_2026");
+        fs.Write(marker, 0, marker.Length);
+    }
+    var nonPeRegions = LargeFileScanner.ExtractRegions(nonPeLarge, ScanMode.SingleFile);
+    Assert("Non-PE large extracts mid region", nonPeRegions.Any(r => r.Label == "mid"));
+    var midScan = await scanner.ScanFileAsync(nonPeLarge);
+    Assert("Non-PE large mid-marker detected", midScan.IsThreat);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[SKIP] Non-PE large test: {ex.Message}");
+}
+finally
+{
+    try { if (File.Exists(nonPeLarge)) File.Delete(nonPeLarge); } catch { }
+}
+
+var edgeTest = Path.Combine(samplesDir, "edge_test.bin");
+try
+{
+    using (var fs = File.Create(edgeTest))
+        fs.SetLength(5L * 1024 * 1024);
+    var edgeRegions = LargeFileScanner.ExtractEdgeRegions(edgeTest, ScanMode.Quick);
+    Assert("Edge regions extracted", edgeRegions.Count >= 2);
+}
+finally
+{
+    try { if (File.Exists(edgeTest)) File.Delete(edgeTest); } catch { }
+}
 
 var quarantine = new QuarantineManager();
 var qFile = Path.Combine(samplesDir, "quarantine_test.js");

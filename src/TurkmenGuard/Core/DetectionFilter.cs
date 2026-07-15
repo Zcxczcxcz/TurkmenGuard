@@ -1,3 +1,5 @@
+using TurkmenGuard.Services;
+
 namespace TurkmenGuard.Core;
 
 /// <summary>
@@ -82,6 +84,10 @@ public static class DetectionFilter
 
     public static bool IncludeInResults(ThreatInfo threat, ScanMode mode)
     {
+        // Own Rules / tools / signature DBs — never alarm the user
+        if (TrustedPaths.IsEngineOrLabArtifact(threat.FilePath))
+            return false;
+
         if (threat.Severity == ThreatSeverity.Test)
             return true;
 
@@ -95,16 +101,19 @@ public static class DetectionFilter
         {
             if (mode == ScanMode.SingleFile)
                 return threat.Severity >= ThreatSeverity.Medium;
-            // Full scan: heuristic YARA only at Critical (CredTheft/AMSI/WebShell stay Critical)
-            return threat.Severity >= ThreatSeverity.Critical;
+            return threat.Severity >= ThreatSeverity.High;
         }
 
         if (mode == ScanMode.SingleFile)
             return threat.Severity >= ThreatSeverity.Medium &&
                    ThreatSeverityRules.ShouldReport(threat.Severity);
 
-        // Quick / Full / RealTime — ClamAV + strong YARA only
-        return threat.Severity >= ThreatSeverity.High;
+        // Full/Quick/RT: High+ stay; Medium kept for Suspicious triage group
+        if (threat.Severity >= ThreatSeverity.High)
+            return true;
+
+        return mode is ScanMode.Full or ScanMode.Quick &&
+               threat.Severity >= ThreatSeverity.Medium;
     }
 
     public static List<ThreatInfo> FilterThreats(IEnumerable<ThreatInfo> threats, ScanMode mode) =>

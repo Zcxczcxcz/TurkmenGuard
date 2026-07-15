@@ -5,25 +5,16 @@
              Background="Transparent">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
-            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24"/>
+            <TextBlock Text="{Binding Title}" Style="{StaticResource TgPageTitle}" Margin="0,0,0,24"/>
 
             <UniformGrid Columns="2" Margin="0,0,0,24">
-                <Button Margin="0,0,8,0" Height="48"
-                        Command="{Binding QuickScanCommand}"
-                        Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="{DynamicResource BrandGreenBrush}"
-                        Content="{Binding QuickScanLabel}"/>
-                <Button Margin="8,0,0,0" Height="48"
-                        Command="{Binding FullScanCommand}"
-                        Style="{StaticResource MaterialDesignOutlinedButton}"
-                        BorderBrush="{DynamicResource BrandGreenBrush}"
-                        Content="{Binding FullScanLabel}"/>
+                <Button Margin="0,0,8,0" Command="{Binding QuickScanCommand}"
+                        Style="{StaticResource TgPrimaryButton}" Content="{Binding QuickScanLabel}"/>
+                <Button Margin="8,0,0,0" Command="{Binding FullScanCommand}"
+                        Style="{StaticResource TgOutlineButton}" Content="{Binding FullScanLabel}"/>
             </UniformGrid>
 
-            <materialDesign:Card Padding="20" Margin="0,0,0,16"
-                                 Background="{DynamicResource CardBackgroundBrush}"
-                                 UniformCornerRadius="8">
+            <materialDesign:Card Style="{StaticResource TgCard}">
                 <StackPanel>
                     <TextBlock Text="{Binding FileScanLabel}" FontWeight="SemiBold" Margin="0,0,0,12"/>
                     <Grid>
@@ -88,32 +79,62 @@
                                  UniformCornerRadius="8"
                                  Visibility="{Binding HasResults, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
-                    <TextBlock Text="{Binding ResultsLabel}" FontWeight="SemiBold" Margin="0,0,0,12"/>
-                    <DataGrid ItemsSource="{Binding ThreatResults}" AutoGenerateColumns="False"
-                              IsReadOnly="True" CanUserAddRows="False" MaxHeight="240"
-                              Background="Transparent"
-                              Foreground="{DynamicResource TextPrimaryBrush}"
-                              HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="{Binding DataContext.ColFile, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                Binding="{Binding FilePath}" Width="*"/>
-                            <DataGridTextColumn Header="{Binding DataContext.ColThreat, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                Binding="{Binding ThreatName}" Width="140"/>
-                            <DataGridTextColumn Header="{Binding DataContext.ColMethod, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                Binding="{Binding Method}" Width="80"/>
-                            <DataGridTemplateColumn Width="110">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="{Binding DataContext.QuarantineLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                Command="{Binding DataContext.QuarantineThreatCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Padding="6,2"
-                                                Style="{StaticResource MaterialDesignFlatButton}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <TextBlock Text="{Binding ResultsLabel}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding SummaryLabel}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               TextWrapping="Wrap" Margin="0,0,0,12"
+                               FontSize="13"/>
+
+                    <ItemsControl ItemsSource="{Binding ThreatGroups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Expander Margin="0,0,0,8" IsExpanded="{Binding IsExpanded}"
+                                          Background="Transparent"
+                                          Foreground="{DynamicResource TextPrimaryBrush}">
+                                    <Expander.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="8" Height="8" CornerRadius="4" Margin="0,0,8,0"
+                                                    Background="{Binding AccentBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Hint}" Margin="12,0,0,0"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       FontSize="12" VerticalAlignment="Center"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Expander.Header>
+                                    <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False"
+                                              IsReadOnly="True" CanUserAddRows="False" MaxHeight="220"
+                                              Margin="0,8,0,0"
+                                              Background="Transparent"
+                                              Foreground="{DynamicResource TextPrimaryBrush}"
+                                              HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="{Binding DataContext.ColFile, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                Binding="{Binding FilePath}" Width="*"/>
+                                            <DataGridTextColumn Header="{Binding DataContext.ColThreat, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                Binding="{Binding ThreatName}" Width="130"/>
+                                            <DataGridTextColumn Header="{Binding DataContext.ColRisk, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                Binding="{Binding RiskLabel}" Width="110"/>
+                                            <DataGridTextColumn Header="{Binding DataContext.ColMethod, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                Binding="{Binding Method}" Width="70"/>
+                                            <DataGridTemplateColumn Width="110">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="{Binding DataContext.QuarantineLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                Command="{Binding DataContext.QuarantineThreatCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Padding="6,2"
+                                                                Style="{StaticResource MaterialDesignFlatButton}"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Expander>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </materialDesign:Card>
         </StackPanel>

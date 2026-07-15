@@ -12,13 +12,7 @@
                        Foreground="{DynamicResource TextPrimaryBrush}"/>
         </DockPanel>
 
-        <DataGrid x:Name="QuarantineGrid" ItemsSource="{Binding Entries}" AutoGenerateColumns="False"
-                  IsReadOnly="True" CanUserAddRows="False"
-                  Background="{DynamicResource CardBackgroundBrush}"
-                  Foreground="{DynamicResource TextPrimaryBrush}"
-                  RowBackground="{DynamicResource CardBackgroundBrush}"
-                  AlternatingRowBackground="{DynamicResource SidebarBackgroundBrush}"
-                  HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+        <DataGrid x:Name="QuarantineGrid" ItemsSource="{Binding Entries}" Style="{StaticResource TgDataGrid}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="{Binding DataContext.ColFile, RelativeSource={RelativeSource AncestorType=UserControl}}" Binding="{Binding OriginalPath}" Width="*"/>
                 <DataGridTextColumn Header="{Binding DataContext.ColThreat, RelativeSource={RelativeSource AncestorType=UserControl}}" Binding="{Binding ThreatName}" Width="150"/>
@@ -38,7 +32,7 @@
                                         CommandParameter="{Binding}"
                                         Padding="8,2"
                                         Style="{StaticResource MaterialDesignFlatButton}"
-                                        Foreground="#C04848"/>
+                                        Foreground="{DynamicResource DangerBrush}"/>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

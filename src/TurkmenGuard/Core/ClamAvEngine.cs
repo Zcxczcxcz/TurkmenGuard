@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -19,8 +18,8 @@ public sealed class ClamAvEngine : IDisposable
 
     private readonly object _daemonLock = new();
     private readonly object _scanProcessLock = new();
-    // One INSTREAM at a time keeps clamd responsive; Quick still pipelines via short timeouts
-    private readonly SemaphoreSlim _tcpGate = new(1, 1);
+    // One zINSTREAM per TCP connection. Up to 3 concurrent when clamd is healthy.
+    private readonly SemaphoreSlim _tcpGate = new(3, 3);
     private Process? _clamdProcess;
     private Process? _activeScanProcess;
     private System.Threading.Timer? _healthTimer;
@@ -31,6 +30,8 @@ public sealed class ClamAvEngine : IDisposable
     public bool IsAvailable { get; private set; }
     public bool DaemonReady => _daemonReady;
     public bool LastScanTimedOut { get; private set; }
+    /// <summary>File exceeded maxBytes cap — not scanned (not clean).</summary>
+    public bool LastScanSkipped { get; private set; }
     /// <summary>Consecutive INSTREAM failures (connect/IO/empty). Reset on success.</summary>
     public int TimeoutStreak => Volatile.Read(ref _timeoutStreak);
     public string? LastError { get; private set; }
@@ -87,24 +88,28 @@ public sealed class ClamAvEngine : IDisposable
         }
     }
 
-    public List<ThreatInfo> Scan(string filePath, int timeoutMs = 120_000, bool allowClamScanFallback = false, long maxBytes = 0)
+    public List<ThreatInfo> Scan(string filePath, int timeoutMs = 120_000, bool allowClamScanFallback = false, long maxBytes = 0, bool qualityMode = false)
     {
         var threats = new List<ThreatInfo>();
         LastScanTimedOut = false;
+        LastScanSkipped = false;
         if (!IsAvailable || !File.Exists(filePath))
             return threats;
 
         if (maxBytes <= 0)
             maxBytes = ScanPolicy.MaxFullClamFileBytes;
 
-        // Under load, shrink work so clamd recovers instead of timing out every file
-        var streak = TimeoutStreak;
-        if (streak >= 8)
-            maxBytes = Math.Min(maxBytes, 2L * 1024 * 1024);
-        if (streak >= 20)
-            maxBytes = Math.Min(maxBytes, 512L * 1024);
-        if (streak >= 8)
-            timeoutMs = Math.Min(timeoutMs, 1_500);
+        // Quick/RealTime: shrink under load so clamd recovers. Full Scan qualityMode waits as long as needed.
+        if (!qualityMode)
+        {
+            var streak = TimeoutStreak;
+            if (streak >= 8)
+                maxBytes = Math.Min(maxBytes, 2L * 1024 * 1024);
+            if (streak >= 20)
+                maxBytes = Math.Min(maxBytes, 512L * 1024);
+            if (streak >= 8)
+                timeoutMs = Math.Min(timeoutMs, 1_500);
+        }
 
         try
         {
@@ -112,7 +117,7 @@ public sealed class ClamAvEngine : IDisposable
             if (_daemonReady)
             {
                 // INSTREAM streams bytes to clamd — nSCAN hangs on Windows path checks.
-                var outcome = ScanViaInstreamFile(filePath, timeoutMs, maxBytes);
+                var outcome = ScanViaInstreamFile(filePath, timeoutMs, maxBytes, qualityMode);
                 output = outcome.Output;
                 LastScanTimedOut = outcome.TimedOut;
             }
@@ -135,7 +140,7 @@ public sealed class ClamAvEngine : IDisposable
     /// Scan an in-memory slice (large-file PE/overlay/edges) via zINSTREAM.
     /// Threats are attributed to <paramref name="originalPath"/>.
     /// </summary>
-    public List<ThreatInfo> ScanBytes(byte[] data, string originalPath, int timeoutMs = 5_000, string? regionLabel = null)
+    public List<ThreatInfo> ScanBytes(byte[] data, string originalPath, int timeoutMs = 5_000, string? regionLabel = null, bool qualityMode = false)
     {
         var threats = new List<ThreatInfo>();
         LastScanTimedOut = false;
@@ -145,13 +150,16 @@ public sealed class ClamAvEngine : IDisposable
         if (data.Length > ScanPolicy.MaxFullClamFileBytes)
             return threats;
 
-        var streak = TimeoutStreak;
-        if (streak >= 8)
-            timeoutMs = Math.Min(timeoutMs, 1_500);
+        if (!qualityMode)
+        {
+            var streak = TimeoutStreak;
+            if (streak >= 8)
+                timeoutMs = Math.Min(timeoutMs, 1_500);
+        }
 
         try
         {
-            var outcome = ScanViaInstreamBytes(data, timeoutMs);
+            var outcome = ScanViaInstreamBytes(data, timeoutMs, qualityMode);
             LastScanTimedOut = outcome.TimedOut;
             var prefix = string.IsNullOrEmpty(regionLabel)
                 ? "ClamAV/large"
@@ -173,7 +181,8 @@ public sealed class ClamAvEngine : IDisposable
 
         foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
-            var trimmed = line.Trim();
+            // IDSESSION replies look like "1: stream: OK" / "1: stream: Trojan.X FOUND"
+            var trimmed = StripIdSessionPrefix(line.Trim());
             if (trimmed.IndexOf("ERROR", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 trimmed.EndsWith(" OK", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.Equals("stream: OK", StringComparison.OrdinalIgnoreCase))
@@ -195,6 +204,20 @@ public sealed class ClamAvEngine : IDisposable
         }
     }
 
+    /// <summary>Strip leading "N: " from clamd IDSESSION replies.</summary>
+    private static string StripIdSessionPrefix(string line)
+    {
+        var i = 0;
+        while (i < line.Length && char.IsDigit(line[i]))
+            i++;
+        if (i == 0 || i >= line.Length || line[i] != ':')
+            return line;
+        i++;
+        while (i < line.Length && line[i] == ' ')
+            i++;
+        return i < line.Length ? line.Substring(i) : line;
+    }
+
     private readonly struct InstreamResult
     {
         public readonly string? Output;
@@ -206,90 +229,93 @@ public sealed class ClamAvEngine : IDisposable
         }
     }
 
-    private InstreamResult ScanViaInstreamFile(string filePath, int timeoutMs, long maxBytes)
+    private InstreamResult ScanViaInstreamFile(string filePath, int timeoutMs, long maxBytes, bool qualityMode)
     {
         long length;
         try { length = new FileInfo(filePath).Length; }
         catch { return new InstreamResult(null, timedOut: false); }
 
-        if (length <= 0 || length > maxBytes)
-            return new InstreamResult("stream: OK", timedOut: false);
+        if (length <= 0)
+            return new InstreamResult(null, timedOut: false);
 
-        return WithInstreamSession(timeoutMs, net =>
+        if (length > maxBytes)
         {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            var buffer = new byte[128 * 1024];
+            LastScanSkipped = true;
+            return new InstreamResult(null, timedOut: false);
+        }
+
+        timeoutMs = ScaleTimeoutForBytes(timeoutMs, length, qualityMode);
+        return WithInstream(timeoutMs, net =>
+        {
+            using var fs = new FileStream(
+                filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
+                bufferSize: 256 * 1024, FileOptions.SequentialScan);
+            var buffer = new byte[256 * 1024];
             int read;
             while ((read = fs.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                var sizeBe = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(read));
-                net.Write(sizeBe, 0, 4);
-                net.Write(buffer, 0, read);
-            }
-        });
+                WriteInstreamChunk(net, buffer, read);
+        }, qualityMode);
     }
 
-    private InstreamResult ScanViaInstreamBytes(byte[] data, int timeoutMs) =>
-        WithInstreamSession(timeoutMs, net =>
+    private InstreamResult ScanViaInstreamBytes(byte[] data, int timeoutMs, bool qualityMode)
+    {
+        timeoutMs = ScaleTimeoutForBytes(timeoutMs, data.Length, qualityMode);
+        return WithInstream(timeoutMs, net =>
         {
             var offset = 0;
             while (offset < data.Length)
             {
-                var chunk = Math.Min(128 * 1024, data.Length - offset);
-                var sizeBe = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(chunk));
-                net.Write(sizeBe, 0, 4);
-                net.Write(data, offset, chunk);
+                var chunk = Math.Min(256 * 1024, data.Length - offset);
+                WriteInstreamChunk(net, data, offset, chunk);
                 offset += chunk;
             }
-        });
+        }, qualityMode);
+    }
 
-    /// <summary>zINSTREAM session: caller writes data chunks; we send EOF and read the reply.</summary>
-    private InstreamResult WithInstreamSession(int timeoutMs, Action<NetworkStream> writeBody)
+    /// <summary>
+    /// One TCP connection → one zINSTREAM → read reply → close.
+    /// Socket pooling / IDSESSION caused timeouts under Full Scan load; localhost connect is cheap.
+    /// </summary>
+    private InstreamResult WithInstream(int timeoutMs, Action<NetworkStream> writeBody, bool qualityMode)
     {
-        var gateWait = Math.Min(Math.Max(timeoutMs, 500), 1_200);
+        var gateWait = qualityMode
+            ? Math.Min(Math.Max(timeoutMs * 4, 60_000), 600_000)
+            : Math.Min(Math.Max(timeoutMs * 2, 3_000), 12_000);
         if (!_tcpGate.Wait(gateWait))
-        {
-            NoteTimeout();
             return new InstreamResult(null, timedOut: true);
-        }
 
+        TcpClient? client = null;
         try
         {
-            using var client = new TcpClient { NoDelay = true };
-            var ar = client.BeginConnect("127.0.0.1", 3310, null, null);
-            if (!ar.AsyncWaitHandle.WaitOne(800))
+            client = ConnectLocal(timeoutMs, qualityMode);
+            if (client == null)
             {
-                try { client.Close(); } catch { /* ignore */ }
-                NoteTimeout();
+                NoteTimeout("connect", qualityMode);
                 return new InstreamResult(null, timedOut: true);
             }
 
-            try { client.EndConnect(ar); }
-            catch
-            {
-                NoteTimeout();
-                return new InstreamResult(null, timedOut: true);
-            }
-
+            // Send can block if clamd is busy draining — keep send budget ≥ scan budget
+            client.SendTimeout = qualityMode ? Math.Max(timeoutMs * 2, 60_000) : Math.Max(timeoutMs, 10_000);
             client.ReceiveTimeout = timeoutMs;
-            client.SendTimeout = Math.Min(timeoutMs, 2_500);
 
-            using var net = client.GetStream();
-            var cmd = Encoding.ASCII.GetBytes("zINSTREAM");
-            net.Write(cmd, 0, cmd.Length);
-            net.WriteByte(0);
-
+            var net = client.GetStream();
+            WriteZCommand(net, "zINSTREAM");
             writeBody(net);
-
-            net.Write(BitConverter.GetBytes(0), 0, 4);
+            WriteChunkLength(net, 0);
             net.Flush();
 
-            using var reader = new StreamReader(net, Encoding.ASCII, false, 4096, leaveOpen: true);
-            var line = reader.ReadLine();
+            var line = ReadClamdLine(net);
             if (string.IsNullOrEmpty(line))
             {
-                NoteTimeout();
+                NoteTimeout("read", qualityMode);
                 return new InstreamResult(null, timedOut: true);
+            }
+
+            var body = StripIdSessionPrefix(line.Trim());
+            if (body.IndexOf("ERROR", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                NoteTimeout("error", qualityMode);
+                return new InstreamResult(line, timedOut: true);
             }
 
             Interlocked.Exchange(ref _timeoutStreak, 0);
@@ -297,27 +323,133 @@ public sealed class ClamAvEngine : IDisposable
         }
         catch (IOException)
         {
-            NoteTimeout();
+            NoteTimeout("io", qualityMode);
             return new InstreamResult(null, timedOut: true);
         }
         catch (SocketException)
         {
-            NoteTimeout();
+            NoteTimeout("socket", qualityMode);
             return new InstreamResult(null, timedOut: true);
         }
         finally
         {
+            if (client != null)
+                DiscardSocket(client);
             _tcpGate.Release();
         }
     }
 
-    private void NoteTimeout()
+    /// <summary>ClamAV needs seconds on multi‑MB PE slices; Full quality allows minutes on large payloads.</summary>
+    private static int ScaleTimeoutForBytes(int requestedMs, long byteCount, bool qualityMode)
+    {
+        if (byteCount <= 512 * 1024)
+            return requestedMs;
+
+        var maxCap = qualityMode ? 300_000 : 20_000;
+        // ~2 ms per KB above 512 KB
+        var scaled = 5_000 + (int)((byteCount - 512 * 1024) / 512);
+        return Math.Max(requestedMs, Math.Min(scaled, maxCap));
+    }
+
+    private static void WriteInstreamChunk(NetworkStream net, byte[] buffer, int length) =>
+        WriteInstreamChunk(net, buffer, 0, length);
+
+    private static void WriteInstreamChunk(NetworkStream net, byte[] buffer, int offset, int length)
+    {
+        WriteChunkLength(net, length);
+        net.Write(buffer, offset, length);
+    }
+
+    /// <summary>4-byte big-endian unsigned chunk length (ClamAV INSTREAM wire format).</summary>
+    private static void WriteChunkLength(NetworkStream net, int length)
+    {
+        var n = (uint)length;
+        net.WriteByte((byte)(n >> 24));
+        net.WriteByte((byte)(n >> 16));
+        net.WriteByte((byte)(n >> 8));
+        net.WriteByte((byte)n);
+    }
+
+    private static TcpClient? ConnectLocal(int connectTimeoutMs, bool qualityMode)
+    {
+        try
+        {
+            var client = new TcpClient
+            {
+                NoDelay = true,
+                LingerState = new LingerOption(true, 0),
+                ReceiveBufferSize = 256 * 1024,
+                SendBufferSize = 256 * 1024
+            };
+            var ar = client.BeginConnect("127.0.0.1", 3310, null, null);
+            var wait = qualityMode
+                ? Math.Min(Math.Max(connectTimeoutMs, 15_000), 60_000)
+                : Math.Min(Math.Max(connectTimeoutMs, 800), 3_000);
+            if (!ar.AsyncWaitHandle.WaitOne(wait))
+            {
+                try { client.Close(); } catch { /* ignore */ }
+                client.Dispose();
+                return null;
+            }
+
+            client.EndConnect(ar);
+            return client;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Read one clamd reply ending at LF or NUL (z-protocol).</summary>
+    private static string? ReadClamdLine(NetworkStream net)
+    {
+        var buffer = new byte[1024];
+        var len = 0;
+        while (len < buffer.Length)
+        {
+            int b;
+            try { b = net.ReadByte(); }
+            catch { return null; }
+
+            if (b < 0)
+                return len > 0 ? Encoding.ASCII.GetString(buffer, 0, len) : null;
+            if (b == 0 || b == '\n')
+                break;
+            if (b == '\r')
+                continue;
+            buffer[len++] = (byte)b;
+        }
+
+        return len > 0 ? Encoding.ASCII.GetString(buffer, 0, len) : null;
+    }
+
+    private static void WriteZCommand(NetworkStream net, string command)
+    {
+        var cmd = Encoding.ASCII.GetBytes(command);
+        net.Write(cmd, 0, cmd.Length);
+        net.WriteByte(0);
+    }
+
+    private static void DiscardSocket(TcpClient client)
+    {
+        try { client.Close(); } catch { /* ignore */ }
+        try { client.Dispose(); } catch { /* ignore */ }
+    }
+
+    private void NoteTimeout(string reason = "timeout", bool qualityMode = false)
     {
         var streak = Interlocked.Increment(ref _timeoutStreak);
+        // Less spam: first hit, then every 25
         if (streak == 1 || streak % 25 == 0)
-            Logger.Warn($"ClamAV INSTREAM slow/timeout (streak={streak}) — file skipped for ClamAV, scan continues");
+        {
+            var suffix = qualityMode
+                ? " — queued for ClamAV retry"
+                : " — file skipped for ClamAV, scan continues";
+            Logger.Warn($"ClamAV INSTREAM slow/{reason} (streak={streak}){suffix}");
+        }
 
-        if (streak == 12)
+        if (!qualityMode && streak == 12)
             Logger.Warn("ClamAV INSTREAM overloaded — shrinking file size/timeout until it recovers");
     }
 
@@ -586,13 +718,13 @@ public sealed class ClamAvEngine : IDisposable
             TCPSocket 3310
             TCPAddr 127.0.0.1
             Foreground yes
-            MaxThreads 3
-            MaxQueue 64
-            MaxFileSize 10M
-            MaxScanSize 20M
-            StreamMaxLength 10M
-            ReadTimeout 20
-            CommandReadTimeout 8
+            MaxThreads 4
+            MaxQueue 200
+            MaxFileSize 256M
+            MaxScanSize 512M
+            StreamMaxLength 256M
+            ReadTimeout 300
+            CommandReadTimeout 120
             ConcurrentDatabaseReload no
             """);
 

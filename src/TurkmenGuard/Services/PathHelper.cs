@@ -80,6 +80,44 @@ public static class PathHelper
             .Select(d => d.RootDirectory.FullName)
             .ToList();
 
+    /// <summary>
+    /// High-risk folders scanned first on Full (faster threat discovery; same coverage overall).
+    /// Drive roots are scanned afterward with these trees skipped to avoid double work.
+    /// </summary>
+    public static List<string> GetFullScanPriorityPaths()
+    {
+        var paths = new List<string>();
+        var user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        AddIfExists(paths, Path.Combine(user, "Downloads"));
+        AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+        AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+        AddIfExists(paths, Path.Combine(user, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup"));
+        AddIfExists(paths, Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "Microsoft", "Windows", "Start Menu", "Programs", "Startup"));
+        AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+        AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86));
+        AddIfExists(paths, Path.Combine(user, "AppData", "Local", "Temp"));
+        return paths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public static bool IsUnderPath(string path, string root)
+    {
+        if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(root))
+            return false;
+        try
+        {
+            var prefix = Path.GetFullPath(root).TrimEnd('\\') + "\\";
+            var full = Path.GetFullPath(path);
+            return full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(full.TrimEnd('\\'), prefix.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static IEnumerable<string> EnumerateFilesSafe(string directory, Func<string, bool>? skipDirectory = null)
     {
         if (skipDirectory?.Invoke(directory) == true)
@@ -107,6 +145,13 @@ public static class PathHelper
         {
             if (skipDirectory?.Invoke(sub) == true)
                 continue;
+
+            try
+            {
+                if ((File.GetAttributes(sub) & FileAttributes.ReparsePoint) != 0)
+                    continue;
+            }
+            catch { continue; }
 
             foreach (var f in EnumerateFilesSafe(sub, skipDirectory))
                 yield return f;

@@ -45,9 +45,10 @@ public static class ThreatSeverityRules
 
     public static bool IsActionable(ThreatSeverity s) => s >= ThreatSeverity.Low;
 
-    /// <summary>Only High+ detections trigger auto-quarantine by default.</summary>
+    /// <summary>Only Malware/Dangerous tiers trigger auto-quarantine.</summary>
     public static bool ShouldAutoQuarantine(ThreatInfo threat) =>
-        threat.Severity >= ThreatSeverity.High;
+        threat.Severity >= ThreatSeverity.High &&
+        ThreatRiskClassifier.Classify(threat) >= ThreatRiskTier.Dangerous;
 }
 
 public class ThreatInfo
@@ -64,6 +65,8 @@ public class ScanResult
 {
     public string FilePath { get; set; } = "";
     public bool IsThreat { get; set; }
+    /// <summary>ClamAV did not finish (timeout/io) — file may have been partially checked via YARA/LargeFile.</summary>
+    public bool ClamAvIncomplete { get; set; }
     public List<ThreatInfo> Threats { get; set; } = [];
     public double? Entropy { get; set; }
     public string? FileHash { get; set; }
@@ -80,4 +83,14 @@ public class ScanProgress
     public string CurrentFile { get; set; } = "";
     public int TotalFiles { get; set; }
     public bool IsRunning { get; set; }
+    /// <summary>Files where ClamAV timed out or failed.</summary>
+    public int ClamAvIncompleteCount { get; set; }
+    /// <summary>Full Scan: seconds since start (display).</summary>
+    public int ElapsedSeconds { get; set; }
+    /// <summary>Soft ETA seconds remaining (0 = unknown). Not a hard limit.</summary>
+    public int EstimatedRemainingSeconds { get; set; }
+    /// <summary>Backward-compatible minutes estimate.</summary>
+    public int EstimatedMinutesRemaining =>
+        EstimatedRemainingSeconds <= 0 ? 0 : Math.Max(1, (EstimatedRemainingSeconds + 59) / 60);
+    public string Phase { get; set; } = "";
 }

@@ -2,82 +2,120 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:ctrl="clr-namespace:TurkmenGuard.Controls"
              Background="Transparent">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
-            <TextBlock Text="{Binding WelcomeText}"
-                       FontSize="22" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimaryBrush}"
-                       Margin="0,0,0,4"/>
-            <TextBlock Text="{Binding DashboardTitle}"
-                       FontSize="14"
-                       Foreground="{DynamicResource TextSecondaryBrush}"
-                       Margin="0,0,0,24"/>
+            <TextBlock Text="{Binding WelcomeText}" Style="{StaticResource TgPageTitle}" Margin="0,0,0,4"/>
+            <TextBlock Text="{Binding DashboardTitle}" Style="{StaticResource TgPageSubtitle}" Margin="0,0,0,28"/>
 
-            <UniformGrid Columns="3" Margin="0,0,0,24">
-                <materialDesign:Card Margin="0,0,8,0" Padding="24"
-                                     Background="{DynamicResource CardBackgroundBrush}"
-                                     UniformCornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="{Binding FilesScannedLabel}"
-                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"/>
-                        <TextBlock Text="{Binding FilesScanned}"
-                                   FontSize="32" FontWeight="Bold"
-                                   Foreground="{DynamicResource BrandGreenBrush}"
-                                   Margin="0,8,0,0"/>
-                    </StackPanel>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <materialDesign:Card Grid.Column="0" Style="{StaticResource TgCard}" Margin="0,0,8,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="120" Height="120" Margin="0,0,24,0">
+                            <Ellipse Stroke="{DynamicResource BorderBrush}" StrokeThickness="6"/>
+                            <Ellipse Stroke="{DynamicResource AccentGreenBrush}" StrokeThickness="6"
+                                     StrokeDashArray="3 1"
+                                     RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <RotateTransform Angle="-90"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding ProtectionScore}" FontSize="36" FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource AccentGreenBrush}"/>
+                                <TextBlock Text="/ 100" FontSize="12"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ProtectionStatus}" FontSize="18" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding RealTimeLabel}" Style="{StaticResource TgPageSubtitle}" Margin="0,6,0,16"/>
+                            <Button Command="{Binding ToggleProtectionCommand}"
+                                    Style="{StaticResource TgPrimaryButton}" HorizontalAlignment="Left"
+                                    Content="{Binding ProtectionStatus}"/>
+                        </StackPanel>
+                    </Grid>
                 </materialDesign:Card>
 
-                <materialDesign:Card Margin="4,0,4,0" Padding="24"
-                                     Background="{DynamicResource CardBackgroundBrush}"
-                                     UniformCornerRadius="8">
+                <materialDesign:Card Grid.Column="1" Style="{StaticResource TgCard}" Margin="8,0,0,0">
                     <StackPanel>
-                        <TextBlock Text="{Binding ThreatsFoundLabel}"
-                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"/>
-                        <TextBlock Text="{Binding ThreatsFound}"
-                                   FontSize="32" FontWeight="Bold"
-                                   Foreground="#C04848"
-                                   Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding EnginesLabel}" Style="{StaticResource TgSectionTitle}" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center"
+                                     Fill="{DynamicResource SuccessBrush}"/>
+                            <TextBlock Text="{Binding ClamAvEngineLabel}" TextWrapping="Wrap" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center"
+                                     Fill="{DynamicResource InfoBrush}"/>
+                            <TextBlock Text="{Binding YaraEngineLabel}" TextWrapping="Wrap" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center"
+                                     Fill="{DynamicResource WarningBrush}"/>
+                            <TextBlock Text="{Binding HashEngineLabel}" TextWrapping="Wrap" FontSize="12"/>
+                        </StackPanel>
                     </StackPanel>
                 </materialDesign:Card>
+            </Grid>
 
-                <materialDesign:Card Margin="8,0,0,0" Padding="24"
-                                     Background="{DynamicResource CardBackgroundBrush}"
-                                     UniformCornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="{Binding QuarantineLabel}"
-                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"/>
-                        <TextBlock Text="{Binding QuarantineCount}"
-                                   FontSize="32" FontWeight="Bold"
-                                   Foreground="{DynamicResource BrandGreenBrush}"
-                                   Margin="0,8,0,0"/>
-                    </StackPanel>
-                </materialDesign:Card>
+            <UniformGrid Columns="3" Margin="0,0,0,20">
+                <ctrl:StatCard Label="{Binding FilesScannedLabel}" Value="{Binding FilesScanned}"
+                               IconKind="FileDocument" Margin="0,0,8,0"
+                               ValueBrush="{DynamicResource AccentGreenBrush}"/>
+                <ctrl:StatCard Label="{Binding ThreatsFoundLabel}" Value="{Binding ThreatsFound}"
+                               IconKind="AlertOctagon" Margin="4,0"
+                               ValueBrush="{DynamicResource DangerBrush}"/>
+                <ctrl:StatCard Label="{Binding QuarantineLabel}" Value="{Binding QuarantineCount}"
+                               IconKind="Archive" Margin="8,0,0,0"
+                               ValueBrush="{DynamicResource InfoBrush}"/>
             </UniformGrid>
 
-            <materialDesign:Card Padding="24" Margin="0,0,0,16"
-                                 Background="{DynamicResource CardBackgroundBrush}"
-                                 UniformCornerRadius="8">
-                <StackPanel>
-                    <TextBlock Text="{Binding RealTimeLabel}"
-                               FontSize="14" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
-                    <TextBlock Text="{Binding ProtectionStatus}"
-                               FontSize="16" Foreground="{DynamicResource BrandGreenBrush}"/>
-                </StackPanel>
-            </materialDesign:Card>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="280"/>
+                </Grid.ColumnDefinitions>
 
-            <materialDesign:Card Padding="24"
-                                 Background="{DynamicResource CardBackgroundBrush}"
-                                 UniformCornerRadius="8">
-                <StackPanel>
-                    <TextBlock Text="{Binding YaraStatusLabel}"
-                               FontSize="14" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
-                    <TextBlock Text="{Binding YaraStatus}"
-                               FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                </StackPanel>
-            </materialDesign:Card>
+                <materialDesign:Card Grid.Column="0" Style="{StaticResource TgCard}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding SystemHealthLabel}" Style="{StaticResource TgSectionTitle}" Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding LastScanLabel}" Margin="0,0,0,6" FontSize="13"/>
+                        <TextBlock Text="{Binding SignatureAgeLabel}" Margin="0,0,0,6" FontSize="13"/>
+                        <TextBlock Text="{Binding YaraStatus}" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,8,0,0"/>
+                        <ProgressBar Style="{StaticResource TgPulseLoader}" Margin="0,16,0,0"
+                                     Visibility="{Binding IsScanRunning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <materialDesign:Card Grid.Column="1" Style="{StaticResource TgCard}" Margin="8,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding QuickActionsLabel}" Style="{StaticResource TgSectionTitle}" Margin="0,0,0,16"/>
+                        <Button Content="{Binding QuickScanBtnLabel}"
+                                Command="{Binding QuickScanAsyncCommand}"
+                                Style="{StaticResource TgPrimaryButton}" Margin="0,0,0,8"/>
+                        <Button Content="{Binding FullScanBtnLabel}"
+                                Command="{Binding OpenScanCommand}"
+                                Style="{StaticResource TgOutlineButton}" Margin="0,0,0,8"/>
+                        <Button Content="{Binding UpdateBtnLabel}"
+                                Command="{Binding UpdateSignaturesAsyncCommand}"
+                                Style="{StaticResource TgOutlineButton}"/>
+                    </StackPanel>
+                </materialDesign:Card>
+            </Grid>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

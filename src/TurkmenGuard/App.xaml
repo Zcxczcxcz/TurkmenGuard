@@ -7,115 +7,18 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- MaterialDesign3 aligned to brand: emerald primary on dark navy -->
                 <materialDesign:BundledTheme BaseTheme="Dark"
                                              PrimaryColor="LightGreen"
                                              SecondaryColor="Green"/>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml"/>
                 <ResourceDictionary Source="Themes/Colors.xaml"/>
+                <ResourceDictionary Source="Themes/Styles.xaml"/>
+                <ResourceDictionary Source="Themes/Animations.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Converters -->
             <conv:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
             <conv:ProtectionBrushConverter x:Key="ProtectionBrushConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-
-            <!-- ============================================================ -->
-            <!--  Shared control styles (flat, strict, minimal)               -->
-            <!-- ============================================================ -->
-
-            <!-- Flat card with 1px border (replaces MD elevation shadow) -->
-            <Style x:Key="TgCard" TargetType="materialDesign:Card">
-                <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="UniformCornerRadius" Value="{StaticResource CardCornerRadius}"/>
-                <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
-                <Setter Property="Margin" Value="0,0,0,16"/>
-            </Style>
-
-            <!-- Primary action button (emerald) -->
-            <Style x:Key="TgPrimaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
-                <Setter Property="Background" Value="{DynamicResource AccentGreenBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenBrush}"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="{StaticResource ButtonCornerRadius}"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="{DynamicResource AccentGreenHoverBrush}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenHoverBrush}"/>
-                    </Trigger>
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Opacity" Value="0.45"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <!-- Secondary/outlined button -->
-            <Style x:Key="TgOutlineButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="{StaticResource ButtonCornerRadius}"/>
-                <Setter Property="Cursor" Value="Hand"/>
-            </Style>
-
-            <!-- Danger button -->
-            <Style x:Key="TgDangerButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
-                <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="{StaticResource ButtonCornerRadius}"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource DangerHoverBrush}"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <!-- Unified DataGrid styling -->
-            <Style x:Key="TgDataGrid" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="RowBackground" Value="Transparent"/>
-                <Setter Property="AlternatingRowBackground" Value="{DynamicResource CardHoverBackgroundBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderBrush}"/>
-                <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource BorderBrush}"/>
-                <Setter Property="HeadersVisibility" Value="Column"/>
-                <Setter Property="AutoGenerateColumns" Value="False"/>
-                <Setter Property="CanUserAddRows" Value="False"/>
-                <Setter Property="CanUserDeleteRows" Value="False"/>
-                <Setter Property="CanUserResizeRows" Value="False"/>
-                <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-                <Setter Property="SelectionMode" Value="Single"/>
-                <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="16,8"/>
-            </Style>
-
-            <!-- Section header text -->
-            <Style x:Key="TgSectionTitle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-            </Style>
-
-            <Style x:Key="TgPageTitle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="22"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-            </Style>
-
-            <Style x:Key="TgPageSubtitle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

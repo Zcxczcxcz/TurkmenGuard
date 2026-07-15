@@ -32,12 +32,17 @@ public static class ScanPolicy
     public const long LargeFileThresholdBytes = MaxFullClamFileBytes;
     /// <summary>Manual File Scan may still stream this much through ClamAV.</summary>
     public const long MaxSingleFileClamBytes = 256L * 1024 * 1024;
+    /// <summary>SingleFile / Quick: larger edge samples.</summary>
     public const long LargeEdgeChunkBytes = 4L * 1024 * 1024;
+    /// <summary>Full Scan: smaller edges so ClamAV finishes under load (still head+tail coverage).</summary>
+    public const long LargeEdgeChunkBytesFull = 1L * 1024 * 1024;
     public const long LargeSectionSampleBytes = 256L * 1024;
-    public const long LargeOverlayMaxFullBytes = 8L * 1024 * 1024;
+    public const long LargeOverlayMaxFullBytes = 4L * 1024 * 1024;
     public const long LargeOverlayMaxDeepBytes = 16L * 1024 * 1024;
     public const long LargeInnerEntryMaxBytes = 8L * 1024 * 1024;
     public const int LargeInnerEntryMaxCount = 12;
+
+    public const long LargeMidSampleBytes = 64L * 1024;
 
     private static readonly HashSet<string> ScannableExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -66,13 +71,18 @@ public static class ScanPolicy
         ".log", ".tmp", ".bak", ".old", ".cache", ".idx", ".db-wal", ".db-shm",
         ".part", ".crdownload", ".partial",
         ".ttf", ".otf", ".woff", ".woff2",
+        // Signature sources — matching them with YARA/ClamAV is pure self-FP noise
+        ".yar", ".yara",
+        ".cvd", ".cld", ".ndb", ".hdb", ".hsb", ".ldb", ".cdb", ".fp",
     };
 
+    /// <summary>
+    /// Heavy/slow archives & disk images that are skipped in Quick/RealTime for responsiveness,
+    /// but NEVER skip executables, DLLs, documents or PDFs — those are the primary malware vectors.
+    /// </summary>
     private static readonly HashSet<string> QuickRealTimeSkipExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".zip", ".rar", ".7z", ".iso", ".img",
-        ".dll", ".pdf",
-        ".doc", ".xls", ".ppt",
+        ".iso", ".img",
     };
 
     public const int MinEntropyFileSize = 8192;
@@ -192,6 +202,17 @@ public static class ScanPolicy
 
         return EntropyExtensions.Contains(Path.GetExtension(filePath));
     }
+
+    public static bool IsPortableExecutableExtension(string ext) =>
+        ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".dll", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".sys", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".scr", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".com", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".ocx", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".cpl", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".drv", StringComparison.OrdinalIgnoreCase) ||
+        ext.Equals(".msi", StringComparison.OrdinalIgnoreCase);
 
     public static IEnumerable<string> GetDefaultExcludedExtensions() =>
         [".log", ".tmp", ".bak", ".old", ".cache", ".jpg", ".png", ".mp3", ".mp4"];

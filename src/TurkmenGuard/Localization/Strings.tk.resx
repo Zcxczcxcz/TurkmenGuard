@@ -69,6 +69,14 @@
   <data name="Start" xml:space="preserve"><value>Başla</value></data>
   <data name="Cancel" xml:space="preserve"><value>Ýatyr</value></data>
   <data name="ScanComplete" xml:space="preserve"><value>Barlag tamamlandy</value></data>
+  <data name="ScanCompleteClamIncomplete" xml:space="preserve"><value>Barlag tamamlandy. ClamAV {0} faýly barlap bilmedi.</value></data>
+  <data name="ScanProgressTimer" xml:space="preserve"><value>{0}/{1} — {2} · {3} · ~{4} galdy</value></data>
+  <data name="ScanEtaHoursOnly" xml:space="preserve"><value>{0} sag</value></data>
+  <data name="ScanEtaHoursMinutes" xml:space="preserve"><value>{0} sag {1} min</value></data>
+  <data name="ScanEtaMinutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="ScanEtaSeconds" xml:space="preserve"><value>{0} sek</value></data>
+  <data name="ScanProgressElapsed" xml:space="preserve"><value>{0}/{1} — {2} · {3}</value></data>
+  <data name="ScanRetryPhase" xml:space="preserve"><value>ClamAV gaýtadan — {0} faýl barlandy</value></data>
   <data name="ScanCancelled" xml:space="preserve"><value>Barlag ýatyryldy</value></data>
   <data name="ScanStarting" xml:space="preserve"><value>Barlag başlaýar…</value></data>
   <data name="ScanError" xml:space="preserve"><value>Barlag şowsuz. Jikme-jiklikler loglarda.</value></data>
@@ -108,6 +116,18 @@
   <data name="ScheduleWeekly" xml:space="preserve"><value>Hepdelik</value></data>
   <data name="ScheduleMonthly" xml:space="preserve"><value>Aýlyk</value></data>
   <data name="ScanResults" xml:space="preserve"><value>Barlag netijeleri</value></data>
+  <data name="ThreatsFoundTotal" xml:space="preserve"><value>Tapyldy: {0}</value></data>
+  <data name="ThreatRiskSummary" xml:space="preserve"><value>Wirus: {0} · Howply: {1} · Şübheli: {2} · Pes: {3}</value></data>
+  <data name="ThreatRiskGroupTitle" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="ColRisk" xml:space="preserve"><value>Howp</value></data>
+  <data name="RiskMalware" xml:space="preserve"><value>Wirus / malware</value></data>
+  <data name="RiskDangerous" xml:space="preserve"><value>Howply</value></data>
+  <data name="RiskSuspicious" xml:space="preserve"><value>Şübheli</value></data>
+  <data name="RiskLow" xml:space="preserve"><value>Pes ähtimallyk</value></data>
+  <data name="RiskMalwareHint" xml:space="preserve"><value>Anyk malware — karantin maslahat berilýär</value></data>
+  <data name="RiskDangerousHint" xml:space="preserve"><value>Ýokary ynam — barlaň we izolýasiýa ediň</value></data>
+  <data name="RiskSuspiciousHint" xml:space="preserve"><value>Karantinden öň el bilen barlaň</value></data>
+  <data name="RiskLowHint" xml:space="preserve"><value>Gowşak signal / test — köplenç ýalňyş</value></data>
   <data name="QuarantineAction" xml:space="preserve"><value>Karantin</value></data>
   <data name="InvalidFolder" xml:space="preserve"><value>Papka tapylmady</value></data>
   <data name="FileNotFound" xml:space="preserve"><value>Faýl tapylmady</value></data>
@@ -160,4 +180,17 @@
   <data name="TamperRulesMissing" xml:space="preserve"><value>YARA düzgünleri zaýalanan ýa-da ýok</value></data>
   <data name="TamperAutostartRestored" xml:space="preserve"><value>Awtostart ýazgysy dikeldildi</value></data>
   <data name="SelfProtectionDetail" xml:space="preserve"><value>Mutex, ýol gözegçiligi, bitewilik barlagy, registry gözegçisi</value></data>
+  <data name="QuickActions" xml:space="preserve"><value>Çalt hereketler</value></data>
+  <data name="EngineStatus" xml:space="preserve"><value>Dwinger ýagdaýy</value></data>
+  <data name="SystemHealth" xml:space="preserve"><value>Ulgam saglygy</value></data>
+  <data name="LastScanAt" xml:space="preserve"><value>Soňky barlag: {0}</value></data>
+  <data name="LastScanNever" xml:space="preserve"><value>Soňky barlag: hiç haçan</value></data>
+  <data name="SignatureAge" xml:space="preserve"><value>Signaturalar: {0} gün öň</value></data>
+  <data name="SignatureAgeUnknown" xml:space="preserve"><value>Signaturalar: täzelenmedi</value></data>
+  <data name="ClamAvEngineLine" xml:space="preserve"><value>ClamAV {0} · {1} DB · daemon {2}</value></data>
+  <data name="YaraEngineLine" xml:space="preserve"><value>YARA · {0} faýl · {1} düzgün</value></data>
+  <data name="HashEngineLine" xml:space="preserve"><value>Hash DB · {0:N0} signatura</value></data>
+  <data name="ClamAvUnavailable" xml:space="preserve"><value>ClamAV elýeterli däl</value></data>
+  <data name="YaraUnavailable" xml:space="preserve"><value>YARA elýeterli däl</value></data>
+  <data name="UpdateSignatures" xml:space="preserve"><value>Signaturalary täzele</value></data>
 </root>

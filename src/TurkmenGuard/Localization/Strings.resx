@@ -69,6 +69,14 @@
   <data name="Start" xml:space="preserve"><value>Start</value></data>
   <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="ScanComplete" xml:space="preserve"><value>Scan complete</value></data>
+  <data name="ScanCompleteClamIncomplete" xml:space="preserve"><value>Scan complete. ClamAV could not verify {0} file(s) — retry or File Scan recommended.</value></data>
+  <data name="ScanProgressTimer" xml:space="preserve"><value>{0}/{1} — {2} · {3} · ~{4} left</value></data>
+  <data name="ScanEtaHoursOnly" xml:space="preserve"><value>{0} h</value></data>
+  <data name="ScanEtaHoursMinutes" xml:space="preserve"><value>{0} h {1} min</value></data>
+  <data name="ScanEtaMinutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="ScanEtaSeconds" xml:space="preserve"><value>{0} sec</value></data>
+  <data name="ScanProgressElapsed" xml:space="preserve"><value>{0}/{1} — {2} · {3}</value></data>
+  <data name="ScanRetryPhase" xml:space="preserve"><value>ClamAV retry pass — {0} files scanned</value></data>
   <data name="ScanCancelled" xml:space="preserve"><value>Scan cancelled</value></data>
   <data name="ScanStarting" xml:space="preserve"><value>Starting scan…</value></data>
   <data name="ScanError" xml:space="preserve"><value>Scan failed. See logs for details.</value></data>
@@ -108,6 +116,18 @@
   <data name="ScheduleWeekly" xml:space="preserve"><value>Weekly</value></data>
   <data name="ScheduleMonthly" xml:space="preserve"><value>Monthly</value></data>
   <data name="ScanResults" xml:space="preserve"><value>Scan results</value></data>
+  <data name="ThreatsFoundTotal" xml:space="preserve"><value>Found: {0}</value></data>
+  <data name="ThreatRiskSummary" xml:space="preserve"><value>Malware: {0} · Dangerous: {1} · Suspicious: {2} · Low: {3}</value></data>
+  <data name="ThreatRiskGroupTitle" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="ColRisk" xml:space="preserve"><value>Risk</value></data>
+  <data name="RiskMalware" xml:space="preserve"><value>Malware</value></data>
+  <data name="RiskDangerous" xml:space="preserve"><value>Dangerous</value></data>
+  <data name="RiskSuspicious" xml:space="preserve"><value>Suspicious</value></data>
+  <data name="RiskLow" xml:space="preserve"><value>Low risk</value></data>
+  <data name="RiskMalwareHint" xml:space="preserve"><value>Clear malware — quarantine recommended</value></data>
+  <data name="RiskDangerousHint" xml:space="preserve"><value>High confidence — review and isolate</value></data>
+  <data name="RiskSuspiciousHint" xml:space="preserve"><value>Review manually before quarantine</value></data>
+  <data name="RiskLowHint" xml:space="preserve"><value>Weak signal / test — often false positive</value></data>
   <data name="QuarantineAction" xml:space="preserve"><value>Quarantine</value></data>
   <data name="InvalidFolder" xml:space="preserve"><value>Folder not found</value></data>
   <data name="FileNotFound" xml:space="preserve"><value>File not found</value></data>
@@ -160,4 +180,17 @@
   <data name="TamperRulesMissing" xml:space="preserve"><value>YARA rules appear damaged or missing</value></data>
   <data name="TamperAutostartRestored" xml:space="preserve"><value>Autostart registry entry was restored</value></data>
   <data name="SelfProtectionDetail" xml:space="preserve"><value>Mutex, path watch, integrity check, registry watchdog</value></data>
+  <data name="QuickActions" xml:space="preserve"><value>Quick actions</value></data>
+  <data name="EngineStatus" xml:space="preserve"><value>Engine status</value></data>
+  <data name="SystemHealth" xml:space="preserve"><value>System health</value></data>
+  <data name="LastScanAt" xml:space="preserve"><value>Last scan: {0}</value></data>
+  <data name="LastScanNever" xml:space="preserve"><value>Last scan: never</value></data>
+  <data name="SignatureAge" xml:space="preserve"><value>Signatures: {0} days ago</value></data>
+  <data name="SignatureAgeUnknown" xml:space="preserve"><value>Signatures: not updated yet</value></data>
+  <data name="ClamAvEngineLine" xml:space="preserve"><value>ClamAV {0} · {1} DB · daemon {2}</value></data>
+  <data name="YaraEngineLine" xml:space="preserve"><value>YARA · {0} files · {1} rules</value></data>
+  <data name="HashEngineLine" xml:space="preserve"><value>Hash DB · {0:N0} signatures</value></data>
+  <data name="ClamAvUnavailable" xml:space="preserve"><value>ClamAV unavailable</value></data>
+  <data name="YaraUnavailable" xml:space="preserve"><value>YARA unavailable</value></data>
+  <data name="UpdateSignatures" xml:space="preserve"><value>Update signatures</value></data>
 </root>

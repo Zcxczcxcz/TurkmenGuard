@@ -1,4 +1,4 @@
-# TurkmenGuard (Türkmen Goragçy) v4.7.2
+# TurkmenGuard (Türkmen Goragçy) v4.8.0
 
 **Репозиторий:** https://github.com/Zcxczcxcz/TurkmenGuard  
 **Для разработчиков:** [docs/DEVELOPERS.md](docs/DEVELOPERS.md) · **Backend API:** [backend/README.md](backend/README.md)
@@ -16,10 +16,10 @@
 |----------|----------|
 | Платформа | **.NET Framework 4.8** (`net48`) — совместимость с Windows 7 |
 | UI | WPF + Material Design 3, корпоративная тёмная тема |
-| Движок | **ClamAV 1.5.3** (полный libclamav) → YARA → Hash fallback |
+| Движок | **ClamAV 1.5.3** → YARA (entropy gate) → Hash fallback |
 | Hash fallback | SQLite 540k+ (если ClamAV engine не установлен) |
 | Сеть | `SignatureUpdateService` + `freshclam` для CVD |
-| Версия | **4.7.2** |
+| Версия | **4.8.0** |
 
 ### Функции
 
@@ -248,11 +248,11 @@ powershell -ExecutionPolicy Bypass -File tools\build-hash-db.ps1
 | Кнопка | Действие |
 |--------|----------|
 | **Quick Scan** | Downloads, Desktop, Temp, Documents (ClamAV + YARA) |
-| **Full Scan** | Все локальные диски, включая Program Files / Windows (без whitelist ПО) |
+| **Full Scan** | Все локальные диски (без лимита времени, качество > скорость) |
 | **Custom Scan** | Выбранная папка |
 | **File Scan** | Один файл (полный ClamAV + YARA) |
 
-**Политика v4.7.x:** белых списков нет. Файлы ≤8 МБ — полный ClamAV; **крупнее** — LargeFileScanner (PE/overlay/края/архив). `INSTREAM timeout` = перегрузка clamd, не «сервис мёртв». После обновления полностью перезапустите приложение.
+**Политика v4.8.x:** Full Scan без лимита по времени — ClamAV ждёт столько, сколько нужно (30 с–5 мин на файл). Пропущенные файлы идут в **retry-очередь** (до 8 раундов, 5 мин/файл). Quick Scan остаётся быстрым (2–3 с). В UI: прошедшее `H:MM:SS` / `MM:SS` и оценка `~N ч M мин осталось` при длинном скане.
 
 ### Защита в реальном времени
 Вкладка **Goragçylyk / Protection** — включить/выключить FileSystemWatcher.
@@ -422,6 +422,106 @@ TurkmenGuard/
 ---
 
 ## История изменений (Changelog)
+
+### v4.8.0 (2026-07-15) — Full Scan: качество без тайм-лимитов + ETA в часах
+**Проблема:** лог забивался `INSTREAM slow/connect (streak=1)` — ClamAV скипал файлы из‑за коротких таймаутов (1.5–3.5 с) и «overload shrink».
+
+**Решение:**
+- **Full Scan quality mode:** таймауты 30 с–5 мин по размеру файла; без урезания maxBytes при streak
+- **clamd:** ReadTimeout 300 с, CommandReadTimeout 120 с; Full идёт **последовательно** (1 воркер)
+- **Retry-очередь:** до **8 раундов**, 5 мин/файл — пропущенные ставятся заново, пока не проверятся
+- **Quick Scan** без изменений — 2–3 с на файл
+- **UI:** прошедшее `H:MM:SS` при >1 ч; ETA `~2 ч 15 мин` / `~45 мин`
+
+**Инструкция:** полностью перезапустите TurkmenGuard (clamd.conf перезапишется при старте).
+
+### v4.8.0 (2026-07-15) — полная модернизация
+- **Сканирование**: `LastScanSkipped` вместо ложного OK; `StreamMaxLength` 256M; entropy-gate → YARA на Full Scan; hash fallback в Quick; `clamscan` fallback при мёртвом daemon; mid-sample для large non-PE; rush archive 1 entry
+- **Real-time**: очередь 128 с coalesce вместо drop/skip при bulk scan
+- **Безопасность**: HTTPS-only обновления; restore path validation; reparse-point skip; log redaction
+- **UI**: design system (`Themes/Styles.xaml`, `Animations.xaml`, `Controls/StatCard`); Dashboard SOC; PackIcon навигация
+- **Производительность**: lazy YARA init; DataGrid virtualization
+- **Hotfix start.bat**: `Brush` ambiguity (WPF vs Drawing); `CardCornerRadius` → double для `UniformCornerRadius`; `CardPadding` → Thickness
+
+### v4.7.9 (2026-07-15) — Full без жёсткого лимита, таймер в UI
+- Убран **принудительный стоп** через 30 мин — скан идёт до конца
+- В прогрессе: **MM:SS** с начала + мягкая **«~N мин осталось»** (оценка по скорости, не дедлайн)
+- Сохранены: retry ClamAV, YARA на PE timeout, ускорение (дедуп, skip кэшей, 3 воркера)
+
+### v4.7.8 (2026-07-15) — Full Scan ~30 мин + retry ClamAV + меньше skip-троянов
+**Проблема:** Full шёл часами; редкий ClamAV timeout на `.exe` = дыра без YARA.
+
+**Решение:**
+- **Бюджет 30 мин:** основной проход 27 мин → retry ClamAV 3 мин → корректное завершение
+- **Retry-очередь:** файлы с timeout пересканируются в конце (1 поток, 20 с)
+- **YARA при timeout** на PE (`.exe`/`.dll`/`.msi` …) до 16 МБ
+- **Счётчик** `ClamAV incomplete` в UI + сообщение при лимите времени
+- **Скорость:** дедуп путей, 3 воркера, skip кэшей/Fonts/DriverStore/Packages/тестов bin
+- **Rush mode** (&lt;8 мин): меньшие LargeFile-срезы, без распаковки архивов
+
+**Инструкция:** после обновления полностью перезапустите TurkmenGuard.
+
+### v4.7.7 (2026-07-15) — ClamAV: стабильный INSTREAM под Full (installers)
+**Проблема после 4.7.6:** на больших установщиках (Notion, NDP, MSI…) снова `streak=1` / overload.
+
+**Причина:** LargeFile слал срезы по **4 МБ** с таймаутом **3 с** + 3 параллельных воркера → clamd не успевал; мелкие файлы успевали (streak сбрасывался в 0) → вечный `streak=1`. Пул IDSESSION под нагрузкой тоже давал сбои.
+
+**Исправление:**
+- Один TCP = один `zINSTREAM` (без пула/IDSESSION) — как в официальном протоколе
+- Таймаут масштабируется по размеру (до 20 с на multi‑MB)
+- Full: края **1 МБ**, max **2** секции PE; параллелизм **2**
+- LargeFile region timeout Full = **8 с**
+
+**Важно:** полностью закройте TurkmenGuard и запустите `bin\Release\TurkmenGuard.exe` заново.
+
+### v4.7.6 (2026-07-15) — фикс ClamAV INSTREAM (пул сокетов) + скорость Full
+**Проблема:** лог забивался `INSTREAM slow/timeout (streak=1)`, ClamAV почти не сканировал файлы.
+
+**Причина:** в v4.7.4 сокеты после обычного `zINSTREAM` клались в пул и переиспользовались. У clamd без `IDSESSION` это **невалидно** → пустой ответ/таймаут → «успех» на новом connect сбрасывал streak → снова `streak=1`.
+
+**Исправление:**
+- Пул на **`zIDSESSION`**: одно TCP-соединение → много `zINSTREAM`, закрытие через `zEND`
+- Проверка half-closed сокетов перед reuse; битые сессии выбрасываются
+- Ожидание слота gate **не** считается timeout clamd (нет ложного streak)
+- Парсинг ответов вида `1: stream: OK` / `1: stream: Trojan FOUND`
+
+**Скорость Full (без урезания покрытия):**
+- До **3** параллельных IDSESSION-воркеров (стабильно, без flood)
+- Буферы TCP 256 КБ; clamd MaxQueue 200, ReadTimeout 20
+- Реальные сканы вместо секундных timeout-пропусков — главный прирост
+
+**Важно:** полностью закройте TurkmenGuard и запустите снова (clamd перечитает conf).
+
+### v4.7.5 (2026-07-15) — группы риска в результатах скана
+**Проблема:** Full Scan показывал ~130 «угроз», в основном Rules/.yar и скрипты самого антивируса.
+
+**Решение (баланс без тупого whitelist):**
+- Результаты делятся на **4 группы**: Вредонос / Опасные / Подозрительные / Низкий риск
+- Сводка сверху: `Вредонос: N · Опасные: …`
+- `.yar`/CVD и папки `TurkmenGuard\Rules|tools|tests` не считаются malware
+- Автокарантин только для групп Malware/Dangerous
+
+### v4.7.4 (2026-07-15) — ускорение самого процесса скана (без урезания покрытия)
+**Проблема:** на каждый файл открывалось новое TCP-соединение к clamd (~сотни мс) — скан был медленным при любом числе файлов.
+
+**Решение:**
+- **Пул постоянных сокетов** к clamd — один connect, много zINSTREAM
+- До **4** параллельных сканов файла + clamd MaxThreads **8**
+- SequentialScan / буфер 256 КБ при чтении файла
+- Откат лишних пропусков путей/PDF-лимитов из 4.7.3 — покрытие как раньше
+- Приоритет рискованных папок (порядок, не пропуск) сохранён
+
+### v4.7.3 (2026-07-15) — ускорение Full Scan без потери покрытия
+**Скорость (качество детекции сохранено):**
+- Full: **приоритет** Downloads/Desktop/Documents/Startup/Program Files/Temp, затем диски (без повторного обхода)
+- Адаптивный параллелизм **1–2** INSTREAM (падает до 1 при TimeoutStreak≥6)
+- clamd MaxThreads **4**, TCP gate **2**
+- LargeFile на Full: 1 секция + меньшие edges (1 МБ) — те же зоны посадки, меньше round-trip’ов
+- Техпропуски: Fonts/Speech/Help/Package Cache/$Windows.~BT/.vs/INetCache (не Program Files)
+- PDF/DOC/XLS/PPT на Full ≤2 МБ (макросы .docm/.xlsm без лимита по этому фильтру)
+- Меньше CleanupScratch и CanOpen-проб на Full
+
+Trojan/Worm/Virus/Ransom по-прежнему не фильтруются; LargeFile/structural path без изменений по задумке.
 
 ### v4.7.2 (2026-07-15) — LargeFileScanner для гигабайтных приложений
 - Файлы **> 8 МБ** больше не игнорируются и не гоняются целиком через INSTREAM

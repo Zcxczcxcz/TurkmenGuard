@@ -69,6 +69,14 @@
   <data name="Start" xml:space="preserve"><value>Старт</value></data>
   <data name="Cancel" xml:space="preserve"><value>Отмена</value></data>
   <data name="ScanComplete" xml:space="preserve"><value>Сканирование завершено</value></data>
+  <data name="ScanCompleteClamIncomplete" xml:space="preserve"><value>Скан завершён. ClamAV не успел проверить {0} файл(ов) — повторите или File Scan.</value></data>
+  <data name="ScanProgressTimer" xml:space="preserve"><value>{0}/{1} — {2} · {3} · ~{4} осталось</value></data>
+  <data name="ScanEtaHoursOnly" xml:space="preserve"><value>{0} ч</value></data>
+  <data name="ScanEtaHoursMinutes" xml:space="preserve"><value>{0} ч {1} мин</value></data>
+  <data name="ScanEtaMinutes" xml:space="preserve"><value>{0} мин</value></data>
+  <data name="ScanEtaSeconds" xml:space="preserve"><value>{0} сек</value></data>
+  <data name="ScanProgressElapsed" xml:space="preserve"><value>{0}/{1} — {2} · {3}</value></data>
+  <data name="ScanRetryPhase" xml:space="preserve"><value>Повтор ClamAV — проверено {0} файлов</value></data>
   <data name="ScanCancelled" xml:space="preserve"><value>Сканирование отменено</value></data>
   <data name="ScanStarting" xml:space="preserve"><value>Запуск сканирования…</value></data>
   <data name="ScanError" xml:space="preserve"><value>Ошибка сканирования. Подробности в логах.</value></data>
@@ -108,6 +116,18 @@
   <data name="ScheduleWeekly" xml:space="preserve"><value>Еженедельно</value></data>
   <data name="ScheduleMonthly" xml:space="preserve"><value>Ежемесячно</value></data>
   <data name="ScanResults" xml:space="preserve"><value>Результаты сканирования</value></data>
+  <data name="ThreatsFoundTotal" xml:space="preserve"><value>Найдено: {0}</value></data>
+  <data name="ThreatRiskSummary" xml:space="preserve"><value>Вредонос: {0} · Опасные: {1} · Подозрительные: {2} · Низкий риск: {3}</value></data>
+  <data name="ThreatRiskGroupTitle" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="ColRisk" xml:space="preserve"><value>Риск</value></data>
+  <data name="RiskMalware" xml:space="preserve"><value>Вредонос</value></data>
+  <data name="RiskDangerous" xml:space="preserve"><value>Опасные</value></data>
+  <data name="RiskSuspicious" xml:space="preserve"><value>Подозрительные</value></data>
+  <data name="RiskLow" xml:space="preserve"><value>Низкий риск</value></data>
+  <data name="RiskMalwareHint" xml:space="preserve"><value>Явный malware — карантин рекомендуется</value></data>
+  <data name="RiskDangerousHint" xml:space="preserve"><value>Высокая уверенность — проверьте и изолируйте</value></data>
+  <data name="RiskSuspiciousHint" xml:space="preserve"><value>Просмотрите вручную перед карантином</value></data>
+  <data name="RiskLowHint" xml:space="preserve"><value>Слабый сигнал / тест — обычно ложное</value></data>
   <data name="QuarantineAction" xml:space="preserve"><value>В карантин</value></data>
   <data name="InvalidFolder" xml:space="preserve"><value>Папка не найдена</value></data>
   <data name="FileNotFound" xml:space="preserve"><value>Файл не найден</value></data>
@@ -160,4 +180,17 @@
   <data name="TamperRulesMissing" xml:space="preserve"><value>Правила YARA повреждены или отсутствуют</value></data>
   <data name="TamperAutostartRestored" xml:space="preserve"><value>Запись автозапуска в реестре восстановлена</value></data>
   <data name="SelfProtectionDetail" xml:space="preserve"><value>Мьютекс, мониторинг путей, проверка целостности, сторож реестра</value></data>
+  <data name="QuickActions" xml:space="preserve"><value>Быстрые действия</value></data>
+  <data name="EngineStatus" xml:space="preserve"><value>Статус движков</value></data>
+  <data name="SystemHealth" xml:space="preserve"><value>Состояние системы</value></data>
+  <data name="LastScanAt" xml:space="preserve"><value>Последнее сканирование: {0}</value></data>
+  <data name="LastScanNever" xml:space="preserve"><value>Последнее сканирование: никогда</value></data>
+  <data name="SignatureAge" xml:space="preserve"><value>Сигнатуры: {0} дн. назад</value></data>
+  <data name="SignatureAgeUnknown" xml:space="preserve"><value>Сигнатуры: не обновлялись</value></data>
+  <data name="ClamAvEngineLine" xml:space="preserve"><value>ClamAV {0} · {1} БД · daemon {2}</value></data>
+  <data name="YaraEngineLine" xml:space="preserve"><value>YARA · {0} файлов · {1} правил</value></data>
+  <data name="HashEngineLine" xml:space="preserve"><value>Hash БД · {0:N0} сигнатур</value></data>
+  <data name="ClamAvUnavailable" xml:space="preserve"><value>ClamAV недоступен</value></data>
+  <data name="YaraUnavailable" xml:space="preserve"><value>YARA недоступен</value></data>
+  <data name="UpdateSignatures" xml:space="preserve"><value>Обновить сигнатуры</value></data>
 </root>

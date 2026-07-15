@@ -63,4 +63,6 @@ public static class LocalizationService
     public static string ThreatsFound => Get("ThreatsFound");
     public static string RealTime => Get("RealTime");
     public static string YaraStatus => Get("YaraStatus");
+    public static string QuickScan => Get("QuickScan");
+    public static string FullScan => Get("FullScan");
 }

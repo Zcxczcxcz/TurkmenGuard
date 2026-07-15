@@ -15,7 +15,8 @@ public class RealTimeGuard : IDisposable
     private readonly AppSettings _settings;
     private readonly QuarantineManager _quarantine; // reserved for future RT auto-quarantine
     private readonly List<FileSystemWatcher> _watchers = [];
-    private readonly ConcurrentQueue<string> _scanQueue = new();
+    private readonly ConcurrentDictionary<string, byte> _pendingPaths = new(StringComparer.OrdinalIgnoreCase);
+    private const int MaxQueueSize = 128;
     private readonly Dictionary<string, DateTime> _debounce = new();
     private readonly TimeSpan _debounceInterval = TimeSpan.FromSeconds(2);
     private readonly object _debounceLock = new();
@@ -35,7 +36,7 @@ public class RealTimeGuard : IDisposable
     public int WatchedFolders => _watchers.Count;
     public int FilesChecked => Volatile.Read(ref _filesChecked);
     public int ThreatsBlocked => Volatile.Read(ref _threatsBlocked);
-    public int QueueLength => _scanQueue.Count;
+    public int QueueLength => _pendingPaths.Count;
     public DateTime LastActivityUtc => _lastActivityUtc;
 
     public RealTimeGuard(ScannerEngine scanner, AppSettings settings, QuarantineManager quarantine)
@@ -107,7 +108,12 @@ public class RealTimeGuard : IDisposable
             w.Dispose();
         }
         _watchers.Clear();
-        while (_scanQueue.TryDequeue(out _)) { }
+        while (_pendingPaths.Count > 0)
+        {
+            var stale = _pendingPaths.Keys.FirstOrDefault();
+            if (stale != null)
+                _pendingPaths.TryRemove(stale, out _);
+        }
 
         lock (_debounceLock)
             _debounce.Clear();
@@ -147,10 +153,18 @@ public class RealTimeGuard : IDisposable
             return;
 
         if (_scanner.IsBulkScanActive)
+        {
+            if (_settings.IsExcluded(path) || TrustedPaths.IsTrusted(path) ||
+                !ScanPolicy.ShouldScanExtension(path, ScanMode.RealTime))
+                return;
+
+            _pendingPaths[path] = 0;
+            EnsureWorker();
             return;
+        }
 
         if (_settings.IsExcluded(path) || TrustedPaths.IsTrusted(path) ||
-            !ScanPolicy.ShouldScanExtension(path))
+            !ScanPolicy.ShouldScanExtension(path, ScanMode.RealTime))
             return;
 
         var now = DateTime.UtcNow;
@@ -168,10 +182,22 @@ public class RealTimeGuard : IDisposable
                 _debounce.Remove(key);
         }
 
-        if (_scanQueue.Count >= 32)
-            _scanQueue.TryDequeue(out _);
+        if (_pendingPaths.Count >= MaxQueueSize)
+        {
+            // Coalesce: refresh timestamp on existing path instead of dropping
+            if (_pendingPaths.ContainsKey(path))
+            {
+                _pendingPaths[path] = 0;
+                return;
+            }
 
-        _scanQueue.Enqueue(path);
+            Logger.Warn($"Real-time queue full ({MaxQueueSize}), coalescing oldest");
+            var oldest = _pendingPaths.Keys.FirstOrDefault();
+            if (oldest != null)
+                _pendingPaths.TryRemove(oldest, out _);
+        }
+
+        _pendingPaths[path] = 0;
         FileEvent?.Invoke(LocalizationService.Format("RtQueued", Path.GetFileName(path)));
         EnsureWorker();
         StatsChanged?.Invoke();
@@ -189,11 +215,17 @@ public class RealTimeGuard : IDisposable
     {
         try
         {
-            while (_enabled && _scanQueue.TryDequeue(out var path))
+            while (_enabled && _pendingPaths.Count > 0)
             {
+                var path = _pendingPaths.Keys.FirstOrDefault();
+                if (path == null)
+                    break;
+                if (!_pendingPaths.TryRemove(path, out _))
+                    continue;
+
                 if (_scanner.IsBulkScanActive)
                 {
-                    _scanQueue.Enqueue(path);
+                    _pendingPaths[path] = 0;
                     await Task.Delay(500);
                     continue;
                 }
@@ -231,7 +263,7 @@ public class RealTimeGuard : IDisposable
         finally
         {
             Interlocked.Exchange(ref _workerActive, 0);
-            if (_enabled && !_scanQueue.IsEmpty)
+            if (_enabled && _pendingPaths.Count > 0)
                 EnsureWorker();
         }
     }

@@ -150,6 +150,13 @@ public sealed class SignatureUpdateService : IDisposable
             ? DefaultEndpoint
             : _settings.SignatureUpdateEndpoint;
 
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            !uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            Logger.Warn($"Manifest fetch blocked (HTTPS only): {url}");
+            return null;
+        }
+
         var json = await _http.GetStringAsync(url);
         return JsonSerializer.Deserialize<SignatureManifest>(json, new JsonSerializerOptions
         {
@@ -159,6 +166,13 @@ public sealed class SignatureUpdateService : IDisposable
 
     private async Task<bool> DownloadFileAsync(string url, string destination)
     {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            !uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            Logger.Warn($"Download blocked (HTTPS only): {url}");
+            return false;
+        }
+
         try
         {
             var dir = Path.GetDirectoryName(destination);

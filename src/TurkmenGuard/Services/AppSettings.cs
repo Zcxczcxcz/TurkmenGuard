@@ -1,5 +1,7 @@
 namespace TurkmenGuard.Services;
 
+using TurkmenGuard.Core;
+
 public class ExclusionSettings
 {
     public List<string> Folders { get; set; } = [];
@@ -49,7 +51,7 @@ public class AppSettings
         "\\Windows\\SoftwareDistribution\\",
         "\\Windows\\Logs\\",
         "\\Windows\\Prefetch\\",
-        // Dev trees — huge file counts, almost never unique malware
+        // Dev trees — huge file counts
         "\\node_modules\\",
         "\\.git\\",
         "\\__pycache__\\",
@@ -72,7 +74,33 @@ public class AppSettings
         "__pycache__",
     ];
 
-    public bool ShouldSkipDirectory(string directoryPath)
+    private static readonly string[] FullScanSkipFragments =
+    [
+        "\\Windows\\Fonts\\",
+        "\\Windows\\Speech\\",
+        "\\Windows\\Help\\",
+        "\\Windows\\Panther\\",
+        "\\Windows\\CbsTemp\\",
+        "\\Windows\\Temp\\",
+        "\\Windows\\System32\\DriverStore\\",
+        "\\Windows\\System32\\catroot2\\",
+        "\\Windows\\System32\\wbem\\Repository\\",
+        "\\Windows\\System32\\config\\",
+        "\\Windows\\SystemResources\\",
+        "\\AppData\\Local\\Microsoft\\Windows\\INetCache\\",
+        "\\AppData\\Local\\Packages\\",
+        "\\AppData\\Local\\D3DSCache\\",
+        "\\AppData\\Local\\NVIDIA\\",
+        "\\AppData\\Local\\AMD\\",
+        "\\Package Cache\\",
+        "\\Microsoft\\Edge\\User Data\\Default\\Cache\\",
+        "\\Google\\Chrome\\User Data\\Default\\Cache\\",
+        "\\Steam\\steamapps\\shadercache\\",
+        "\\.vs\\",
+        "\\TurkmenGuard.Tests\\bin\\",
+    ];
+
+    public bool ShouldSkipDirectory(string directoryPath, ScanMode mode = ScanMode.Full)
     {
         if (string.IsNullOrWhiteSpace(directoryPath))
             return true;
@@ -80,6 +108,9 @@ public class AppSettings
         try
         {
             if (TrustedPaths.IsTrusted(directoryPath))
+                return true;
+
+            if (TrustedPaths.IsEngineOrLabArtifact(directoryPath))
                 return true;
 
             var name = Path.GetFileName(directoryPath.TrimEnd('\\', '/'));
@@ -103,6 +134,15 @@ public class AppSettings
                 if (full.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
                     return true;
             }
+
+            if (mode == ScanMode.Full)
+            {
+                foreach (var fragment in FullScanSkipFragments)
+                {
+                    if (full.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+                }
+            }
         }
         catch
         {
@@ -120,6 +160,9 @@ public class AppSettings
         try
         {
             if (TrustedPaths.IsTrusted(filePath))
+                return true;
+
+            if (TrustedPaths.IsEngineOrLabArtifact(filePath))
                 return true;
 
             var full = Path.GetFullPath(filePath);

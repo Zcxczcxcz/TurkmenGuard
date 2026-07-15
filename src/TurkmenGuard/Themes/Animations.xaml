@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Duration x:Key="TgAnimFast">0:0:0.2</Duration>
+    <Duration x:Key="TgAnimNormal">0:0:0.3</Duration>
+
+    <Storyboard x:Key="TgFadeInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="{StaticResource TgAnimNormal}"/>
+    </Storyboard>
+
+    <Style x:Key="TgFadeIn" TargetType="FrameworkElement">
+        <Setter Property="Opacity" Value="0"/>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard Storyboard="{StaticResource TgFadeInStoryboard}"/>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TgPulseLoader" TargetType="ProgressBar">
+        <Setter Property="IsIndeterminate" Value="True"/>
+        <Setter Property="Height" Value="3"/>
+        <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+    </Style>
+</ResourceDictionary>

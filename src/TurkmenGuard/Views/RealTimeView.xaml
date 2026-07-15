@@ -5,15 +5,9 @@
              Background="Transparent">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
-            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24"/>
+            <TextBlock Text="{Binding Title}" Style="{StaticResource TgPageTitle}" Margin="0,0,0,24"/>
 
-            <!-- Status + toggle -->
-            <Border Padding="24" Margin="0,0,0,16"
-                    Background="{DynamicResource CardBackgroundBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
+            <materialDesign:Card Style="{StaticResource TgCard}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -53,7 +47,7 @@
                                   Style="{StaticResource MaterialDesignSwitchToggleButton}"
                                   Content="{Binding ToggleLabel}"/>
                 </Grid>
-            </Border>
+            </materialDesign:Card>
 
             <!-- Live counters -->
             <UniformGrid Columns="4" Margin="0,0,0,16">

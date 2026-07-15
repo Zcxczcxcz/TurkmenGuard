@@ -13,7 +13,7 @@ namespace TurkmenGuard.Core;
 /// </summary>
 public sealed class YaraScanner : IDisposable
 {
-    private readonly object _scanLock = new();
+    private readonly object _rulesLock = new();
     private readonly YaraContext _context = new();
 
     private Rules? _rules;
@@ -30,7 +30,9 @@ public sealed class YaraScanner : IDisposable
     {
         try
         {
-            DisposeRules();
+            lock (_rulesLock)
+            {
+                DisposeRules();
 
             if (!Directory.Exists(rulesDirectory))
             {
@@ -76,6 +78,7 @@ public sealed class YaraScanner : IDisposable
             CompiledRuleCount = _rules?.GetRules()?.Count() ?? 0;
             _initialized = _rules != null;
             LastError = _initialized ? null : "YARA compile failed";
+            }
             Logger.Info($"YARA initialized: {CompiledRuleCount} rules from {_filesLoaded} files");
             return _initialized;
         }
@@ -100,7 +103,7 @@ public sealed class YaraScanner : IDisposable
         if (!ScanPolicy.CanOpenForScan(filePath))
             return threats;
 
-        lock (_scanLock)
+        lock (_rulesLock)
         {
             if (_disposed || _rules == null)
                 return threats;
@@ -126,13 +129,13 @@ public sealed class YaraScanner : IDisposable
     public List<ThreatInfo> ScanMemory(byte[] data, string originalPath, string? regionLabel = null)
     {
         var threats = new List<ThreatInfo>();
-        if (!_initialized || _rules == null || data == null || data.Length == 0)
+        if (!_initialized || data == null || data.Length == 0)
             return threats;
 
         if (data.Length > ScanPolicy.MaxYaraFileBytes)
             return threats;
 
-        lock (_scanLock)
+        lock (_rulesLock)
         {
             if (_disposed || _rules == null)
                 return threats;
@@ -238,17 +241,21 @@ public sealed class YaraScanner : IDisposable
 
     private void DisposeRules()
     {
-        _rules = null;
-        _initialized = false;
-        _filesLoaded = 0;
-        CompiledRuleCount = 0;
+        lock (_rulesLock)
+        {
+            _rules = null;
+            _initialized = false;
+            _filesLoaded = 0;
+            CompiledRuleCount = 0;
+        }
     }
 
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        DisposeRules();
+        lock (_rulesLock)
+            DisposeRules();
         _context.Dispose();
     }
 }

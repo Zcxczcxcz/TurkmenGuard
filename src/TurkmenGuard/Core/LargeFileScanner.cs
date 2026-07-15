@@ -10,6 +10,8 @@ namespace TurkmenGuard.Core;
 /// </summary>
 public static class LargeFileScanner
 {
+    private static int _scratchCleanupCounter;
+
     private static readonly HashSet<string> InterestingArchiveExt = new(StringComparer.OrdinalIgnoreCase)
     {
         ".exe", ".dll", ".sys", ".scr", ".com", ".bat", ".cmd", ".ps1",
@@ -32,7 +34,7 @@ public static class LargeFileScanner
         length > ScanPolicy.LargeFileThresholdBytes;
 
     /// <summary>Extract small regions that usually host malware in large apps/installers.</summary>
-    public static List<Region> ExtractRegions(string filePath, ScanMode mode)
+    public static List<Region> ExtractRegions(string filePath, ScanMode mode, bool rushMode = false)
     {
         var regions = new List<Region>(12);
         try
@@ -44,11 +46,11 @@ public static class LargeFileScanner
             if (length <= 0)
                 return regions;
 
-            if (TryReadPeRegions(fs, length, mode, regions))
+            if (TryReadPeRegions(fs, length, mode, regions, rushMode))
                 return regions;
 
             // Non-PE: head + tail (worms/appended payloads often sit at edges)
-            AddEdgeRegions(fs, length, regions);
+            AddEdgeRegions(fs, length, mode, regions, rushMode);
         }
         catch (Exception ex)
         {
@@ -58,16 +60,38 @@ public static class LargeFileScanner
         return regions;
     }
 
+    /// <summary>Head/tail/mid samples for files skipped by ClamAV size cap.</summary>
+    public static List<Region> ExtractEdgeRegions(string filePath, ScanMode mode, bool rush = false)
+    {
+        var regions = new List<Region>(4);
+        try
+        {
+            using var fs = new FileStream(
+                filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var length = fs.Length;
+            if (length <= 0)
+                return regions;
+            AddEdgeRegions(fs, length, mode, regions, rush);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"LargeFile edges [{Path.GetFileName(filePath)}]: {ex.Message}");
+        }
+
+        return regions;
+    }
+
     /// <summary>
     /// Pull executable-like entries from ZIP / ZIP-in-overlay into scratch files.
     /// Caller must delete returned paths.
     /// </summary>
-    public static List<string> ExtractArchiveExecutables(string filePath, ScanMode mode)
+    public static List<string> ExtractArchiveExecutables(string filePath, ScanMode mode, bool rushMode = false)
     {
         var paths = new List<string>();
-        var maxEntries = mode == ScanMode.SingleFile
-            ? ScanPolicy.LargeInnerEntryMaxCount
-            : mode == ScanMode.RealTime ? 4 : 8;
+            var maxEntries = rushMode ? 1
+                : mode == ScanMode.SingleFile
+                ? ScanPolicy.LargeInnerEntryMaxCount
+                : 4;
 
         try
         {
@@ -144,6 +168,10 @@ public static class LargeFileScanner
 
     public static void CleanupScratch()
     {
+        // Expensive directory walk — only every Nth large-file scan
+        if (Interlocked.Increment(ref _scratchCleanupCounter) % 40 != 1)
+            return;
+
         try
         {
             var dir = Path.Combine(PathHelper.AppDataDir, "scratch");
@@ -155,7 +183,7 @@ public static class LargeFileScanner
                 try
                 {
                     var age = DateTime.UtcNow - File.GetCreationTimeUtc(f);
-                    if (age.TotalHours > 2)
+                    if (age.TotalHours > 1)
                         File.Delete(f);
                 }
                 catch { /* ignore */ }
@@ -164,7 +192,7 @@ public static class LargeFileScanner
         catch { /* ignore */ }
     }
 
-    private static bool TryReadPeRegions(FileStream fs, long length, ScanMode mode, List<Region> regions)
+    private static bool TryReadPeRegions(FileStream fs, long length, ScanMode mode, List<Region> regions, bool rushMode)
     {
         if (!IsPe(fs, out var overlayStart))
             return false;
@@ -196,8 +224,10 @@ public static class LargeFileScanner
                 return true;
 
             var sectionTable = eLfanew + 24 + optHeaderSize;
-            var sample = (int)ScanPolicy.LargeSectionSampleBytes;
-            var maxSections = mode == ScanMode.SingleFile ? 8 : 4;
+            var sample = rushMode ? 128 * 1024 : (int)ScanPolicy.LargeSectionSampleBytes;
+            var maxSections = mode == ScanMode.SingleFile ? 8
+                : rushMode ? 1
+                : mode == ScanMode.Full ? 2 : 4;
 
             for (var i = 0; i < numSections && i < maxSections; i++)
             {
@@ -226,6 +256,7 @@ public static class LargeFileScanner
 
         var overlayMax = mode == ScanMode.SingleFile
             ? ScanPolicy.LargeOverlayMaxDeepBytes
+            : rushMode ? 1L * 1024 * 1024
             : ScanPolicy.LargeOverlayMaxFullBytes;
 
         if (overlayStart > 0 && overlayStart < length)
@@ -237,8 +268,11 @@ public static class LargeFileScanner
             }
             else
             {
-                // Head + tail of overlay (appended archives / droppers)
-                var edge = (int)Math.Min(ScanPolicy.LargeEdgeChunkBytes, overlayLen / 2);
+                var edgeBudget = rushMode ? 512L * 1024
+                    : mode == ScanMode.Full
+                        ? ScanPolicy.LargeEdgeChunkBytesFull
+                        : ScanPolicy.LargeEdgeChunkBytes;
+                var edge = (int)Math.Min(edgeBudget, overlayLen / 2);
                 regions.Add(new Region("overlay-head", ReadAt(fs, overlayStart, edge)));
                 regions.Add(new Region("overlay-tail",
                     ReadAt(fs, length - edge, edge)));
@@ -246,19 +280,32 @@ public static class LargeFileScanner
         }
         else if (length > ScanPolicy.LargeFileThresholdBytes)
         {
-            // PE without overlay still gets edges (packed installers)
-            AddEdgeRegions(fs, length, regions);
+            AddEdgeRegions(fs, length, mode, regions, rushMode);
         }
 
         return true;
     }
 
-    private static void AddEdgeRegions(FileStream fs, long length, List<Region> regions)
+    private static void AddEdgeRegions(FileStream fs, long length, List<Region> regions) =>
+        AddEdgeRegions(fs, length, ScanMode.SingleFile, regions, rushMode: false);
+
+    private static void AddEdgeRegions(FileStream fs, long length, ScanMode mode, List<Region> regions, bool rushMode)
     {
-        var chunk = (int)Math.Min(ScanPolicy.LargeEdgeChunkBytes, length);
+        var budget = rushMode ? 512L * 1024
+            : mode == ScanMode.Full
+                ? ScanPolicy.LargeEdgeChunkBytesFull
+                : ScanPolicy.LargeEdgeChunkBytes;
+        var chunk = (int)Math.Min(budget, length);
         regions.Add(new Region("head", ReadAt(fs, 0, chunk)));
         if (length > chunk)
             regions.Add(new Region("tail", ReadAt(fs, length - chunk, chunk)));
+
+        var midSize = (int)ScanPolicy.LargeMidSampleBytes;
+        if (length > chunk * 2L + midSize)
+        {
+            var midOffset = (length - midSize) / 2;
+            regions.Add(new Region("mid", ReadAt(fs, midOffset, midSize)));
+        }
     }
 
     private static bool IsPe(FileStream fs, out long overlayStart)

@@ -1,6 +1,7 @@
 using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
 using TurkmenGuard.Services;
 using TurkmenGuard.Views;
 
@@ -43,6 +44,7 @@ public partial class MainViewModel : ViewModelBase
         _settingsVm = new SettingsViewModel(services);
 
         _dashboardView = new DashboardView(_dashboardVm);
+        _dashboardVm.NavigateRequested += NavigateTo;
         _scanView = new ScanView(_scanVm);
         _realTimeView = new RealTimeView(_realTimeVm);
         _quarantineView = new QuarantineView(_quarantineVm);
@@ -65,11 +67,11 @@ public partial class MainViewModel : ViewModelBase
     {
         NavItems.Clear();
         NavItems.AddRange([
-            new() { Key = "dashboard", Icon = "◆", Title = LocalizationService.Get("NavDashboard") },
-            new() { Key = "scan", Icon = "◎", Title = LocalizationService.Get("NavScan") },
-            new() { Key = "realtime", Icon = "▣", Title = LocalizationService.Get("NavRealTime") },
-            new() { Key = "quarantine", Icon = "▤", Title = LocalizationService.Get("NavQuarantine") },
-            new() { Key = "settings", Icon = "⚙", Title = LocalizationService.Get("NavSettings") },
+            new() { Key = "dashboard", IconKind = PackIconKind.ViewDashboard, Title = LocalizationService.Get("NavDashboard") },
+            new() { Key = "scan", IconKind = PackIconKind.Radar, Title = LocalizationService.Get("NavScan") },
+            new() { Key = "realtime", IconKind = PackIconKind.ShieldCheck, Title = LocalizationService.Get("NavRealTime") },
+            new() { Key = "quarantine", IconKind = PackIconKind.ArchiveLock, Title = LocalizationService.Get("NavQuarantine") },
+            new() { Key = "settings", IconKind = PackIconKind.Cog, Title = LocalizationService.Get("NavSettings") },
         ]);
     }
 

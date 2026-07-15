@@ -110,6 +110,7 @@ public static class Logger
 
     private static void Write(string level, string message)
     {
+        message = RedactSensitivePaths(message);
         var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}";
         lock (Lock)
         {
@@ -120,5 +121,28 @@ public static class Logger
             }
             catch { /* ignore */ }
         }
+    }
+
+    private static string RedactSensitivePaths(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+            return message;
+
+        try
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            if (!string.IsNullOrEmpty(appData) &&
+                message.IndexOf(appData, StringComparison.OrdinalIgnoreCase) >= 0)
+                message = message.Replace(appData, "%AppData%");
+        }
+        catch { /* ignore */ }
+
+        return message;
+    }
+
+    public static void FlushOnExit()
+    {
+        lock (Lock)
+            FlushWriter();
     }
 }

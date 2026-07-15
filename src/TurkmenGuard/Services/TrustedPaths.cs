@@ -83,4 +83,53 @@ public static class TrustedPaths
             return false;
         }
     }
+
+    /// <summary>
+    /// Signature sources and this product's Rules/tools/tests — not user malware.
+    /// </summary>
+    public static bool IsEngineOrLabArtifact(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        try
+        {
+            if (IsTrusted(path))
+                return true;
+
+            var full = Path.GetFullPath(path);
+            var ext = Path.GetExtension(full);
+
+            if (ext.Equals(".yar", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".yara", StringComparison.OrdinalIgnoreCase) ||
+                full.EndsWith(".yar.disabled", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".cvd", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".cld", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".ndb", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".hdb", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".hsb", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".ldb", StringComparison.OrdinalIgnoreCase) ||
+                ext.Equals(".cdb", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return ContainsFolder(full, "TurkmenGuard", "Rules") ||
+                   ContainsFolder(full, "TurkmenGuard", "tools") ||
+                   ContainsFolder(full, "TurkmenGuard", "docs") ||
+                   ContainsFolder(full, "TurkmenGuard", "ThirdParty");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool ContainsFolder(string fullPath, string parent, string child)
+    {
+        var needle = "\\" + parent + "\\" + child;
+        var idx = fullPath.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0)
+            return false;
+        var after = idx + needle.Length;
+        return after >= fullPath.Length || fullPath[after] == '\\';
+    }
 }
