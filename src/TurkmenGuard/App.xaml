@@ -7,18 +7,271 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- MaterialDesign3 aligned to brand: emerald primary on deep navy -->
                 <materialDesign:BundledTheme BaseTheme="Dark"
                                              PrimaryColor="LightGreen"
                                              SecondaryColor="Green"/>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml"/>
                 <ResourceDictionary Source="Themes/Colors.xaml"/>
-                <ResourceDictionary Source="Themes/Styles.xaml"/>
+                <!-- Pulse loader / fade-in (must stay merged — used by DashboardView) -->
                 <ResourceDictionary Source="Themes/Animations.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
+            <!-- Converters -->
             <conv:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
             <conv:ProtectionBrushConverter x:Key="ProtectionBrushConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+            <!-- ============================================================ -->
+            <!--  Shared control styles (strict, minimal, technological)     -->
+            <!-- ============================================================ -->
+
+            <!-- Flat card: 1px border, soft shadow, hover lift -->
+            <Style x:Key="TgCard" TargetType="materialDesign:Card">
+                <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="UniformCornerRadius" Value="{StaticResource CardCornerRadius}"/>
+                <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
+                <Setter Property="Margin" Value="0,0,0,16"/>
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <TranslateTransform X="0" Y="0"/>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                <Style.Triggers>
+                    <EventTrigger RoutedEvent="MouseEnter">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="-2" Duration="0:0:0.18"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="MouseLeave">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.18"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Static card (no hover lift) -->
+            <Style x:Key="TgCardFlat" TargetType="materialDesign:Card" BasedOn="{StaticResource TgCard}">
+                <Setter Property="RenderTransform" Value="{x:Null}"/>
+                <Style.Triggers/>
+            </Style>
+
+            <!-- Primary action button (emerald gradient + glow) -->
+            <Style x:Key="TgPrimaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                <Setter Property="Background" Value="{DynamicResource AccentGradientBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="20,0"/>
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="{StaticResource ButtonCornerRadius}"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource AccentGreenHoverBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenHoverBrush}"/>
+                        <Setter Property="Effect" Value="{StaticResource AccentGlowEffect}"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource AccentGreenPressedBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenPressedBrush}"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.4"/>
+                        <Setter Property="Effect" Value="{x:Null}"/>
+                    </Trigger>
+                    <EventTrigger RoutedEvent="Button.PreviewMouseLeftButtonDown">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="0.97" Duration="0:0:0.08"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="0.97" Duration="0:0:0.08"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="Button.PreviewMouseLeftButtonUp">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1" Duration="0:0:0.12"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1" Duration="0:0:0.12"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Secondary/outlined button -->
+            <Style x:Key="TgOutlineButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="20,0"/>
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="{StaticResource ButtonCornerRadius}"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.4"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Ghost / text button -->
+            <Style x:Key="TgGhostButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Height" Value="36"/>
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="{StaticResource ButtonCornerRadius}"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Danger button -->
+            <Style x:Key="TgDangerButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="{StaticResource ButtonCornerRadius}"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource DangerHoverBrush}"/>
+                        <Setter Property="Effect" Value="{StaticResource DangerGlowEffect}"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.4"/>
+                        <Setter Property="Effect" Value="{x:Null}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Input field -->
+            <Style x:Key="TgTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource CardSunkenBrush}"/>
+                <Setter Property="Padding" Value="12,10"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{DynamicResource AccentGreenBrush}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Unified DataGrid styling -->
+            <Style x:Key="TgDataGrid" TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="RowBackground" Value="Transparent"/>
+                <Setter Property="AlternatingRowBackground" Value="{DynamicResource CardHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="HeadersVisibility" Value="Column"/>
+                <Setter Property="AutoGenerateColumns" Value="False"/>
+                <Setter Property="CanUserAddRows" Value="False"/>
+                <Setter Property="CanUserDeleteRows" Value="False"/>
+                <Setter Property="CanUserResizeRows" Value="False"/>
+                <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+                <Setter Property="SelectionMode" Value="Single"/>
+                <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="16,10"/>
+            </Style>
+
+            <!-- Typography -->
+            <Style x:Key="TgDisplayText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="34"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Style>
+
+            <Style x:Key="TgPageTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="24"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Style>
+
+            <Style x:Key="TgPageSubtitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            </Style>
+
+            <Style x:Key="TgSectionTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Style>
+
+            <Style x:Key="TgLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            </Style>
+
+            <Style x:Key="TgValueText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Style>
+
+            <Style x:Key="TgMonoText" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            </Style>
+
+            <!-- Stat tile: large number + label -->
+            <Style x:Key="TgStatNumber" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="30"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Style>
+
+            <!-- Alias kept for StatCard / older views that still reference TgStatValue -->
+            <Style x:Key="TgStatValue" TargetType="TextBlock" BasedOn="{StaticResource TgStatNumber}"/>
+
+            <Style x:Key="TgStatLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

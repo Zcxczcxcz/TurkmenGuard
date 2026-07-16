@@ -30,6 +30,7 @@
                               SelectedItem="{Binding SelectedScheduleOption}"
                               DisplayMemberPath="Label" Margin="0,0,0,12"/>
                     <CheckBox Content="{Binding AutoQuarantineLabel}" IsChecked="{Binding AutoQuarantine}" Margin="0,0,0,8"/>
+                    <CheckBox Content="{Binding KillSuspiciousProcessesLabel}" IsChecked="{Binding KillSuspiciousProcesses}" Margin="0,0,0,8"/>
                     <CheckBox Content="{Binding AutoStartLabel}" IsChecked="{Binding AutoStart}" Margin="0,0,0,8"/>
                     <CheckBox Content="{Binding SelfProtectionLabel}" IsChecked="{Binding SelfProtection}" Margin="0,0,0,8"/>
                     <CheckBox Content="{Binding NotificationsLabel}" IsChecked="{Binding NotificationsEnabled}" Margin="0,0,0,8"/>
@@ -54,19 +55,6 @@
                             Style="{StaticResource TgPrimaryButton}" Content="{Binding UpdateNowLabel}" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding SignatureStatus}" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                </StackPanel>
-            </materialDesign:Card>
-
-            <materialDesign:Card Padding="20" Margin="0,0,0,12"
-                                 Background="{DynamicResource CardBackgroundBrush}" UniformCornerRadius="8">
-                <StackPanel>
-                    <TextBlock Text="{Binding ExclusionsLabel}" Margin="0,0,0,8"/>
-                    <TextBlock Text="{Binding ExtensionsLabel}" FontSize="11"
-                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding ExcludedExtensions}" Margin="0,0,0,12"/>
-                    <TextBlock Text="{Binding FoldersLabel}" FontSize="11"
-                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding ExcludedFolders}" AcceptsReturn="True" Height="60"/>
                 </StackPanel>
             </materialDesign:Card>
 

@@ -15,11 +15,10 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private ComboOption? _selectedScheduleOption;
     [ObservableProperty] private bool _autoQuarantine;
     [ObservableProperty] private bool _autoStart;
+    [ObservableProperty] private bool _killSuspiciousProcesses = true;
     [ObservableProperty] private bool _selfProtection = true;
     [ObservableProperty] private bool _notificationsEnabled = true;
     [ObservableProperty] private bool _processMonitorEnabled;
-    [ObservableProperty] private string _excludedExtensions = "";
-    [ObservableProperty] private string _excludedFolders = "";
     [ObservableProperty] private string _monitoredFolders = "";
     [ObservableProperty] private string _statusMessage = "";
     [ObservableProperty] private string _title = "";
@@ -28,12 +27,10 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _scheduleLabel = "";
     [ObservableProperty] private string _autoQuarantineLabel = "";
     [ObservableProperty] private string _autoStartLabel = "";
+    [ObservableProperty] private string _killSuspiciousProcessesLabel = "";
     [ObservableProperty] private string _selfProtectionLabel = "";
     [ObservableProperty] private string _notificationsLabel = "";
     [ObservableProperty] private string _processMonitorLabel = "";
-    [ObservableProperty] private string _exclusionsLabel = "";
-    [ObservableProperty] private string _extensionsLabel = "";
-    [ObservableProperty] private string _foldersLabel = "";
     [ObservableProperty] private string _monitoredFoldersLabel = "";
     [ObservableProperty] private string _saveLabel = "";
     [ObservableProperty] private string _exitLabel = "";
@@ -121,12 +118,10 @@ public partial class SettingsViewModel : ViewModelBase
         ScheduleLabel = LocalizationService.Get("ScanSchedule");
         AutoQuarantineLabel = LocalizationService.Get("AutoQuarantine");
         AutoStartLabel = LocalizationService.Get("AutoStart");
+        KillSuspiciousProcessesLabel = LocalizationService.Get("KillSuspiciousProcesses");
         SelfProtectionLabel = LocalizationService.Get("SelfProtection");
         NotificationsLabel = LocalizationService.Get("Notifications");
         ProcessMonitorLabel = LocalizationService.Get("ProcessMonitor");
-        ExclusionsLabel = LocalizationService.Get("Exclusions");
-        ExtensionsLabel = LocalizationService.Get("ExcludedExtensions");
-        FoldersLabel = LocalizationService.Get("ExcludedFolders");
         MonitoredFoldersLabel = LocalizationService.Get("MonitoredFolders");
         SaveLabel = LocalizationService.Get("Save");
         ExitLabel = LocalizationService.Get("Exit");
@@ -174,11 +169,10 @@ public partial class SettingsViewModel : ViewModelBase
         SelectedScheduleOption = ScheduleOptions.FirstOrDefault(o => o.Value == s.ScanSchedule);
         AutoQuarantine = s.AutoQuarantine;
         AutoStart = s.AutoStart;
+        KillSuspiciousProcesses = s.KillSuspiciousProcesses;
         SelfProtection = s.SelfProtectionEnabled;
         NotificationsEnabled = s.NotificationsEnabled;
         ProcessMonitorEnabled = s.ProcessMonitorEnabled;
-        ExcludedExtensions = string.Join(", ", s.Exclusions.Extensions);
-        ExcludedFolders = string.Join(Environment.NewLine, s.Exclusions.Folders);
         MonitoredFolders = string.Join(Environment.NewLine, s.MonitoredFolders);
         SignatureUpdatesEnabled = s.SignatureUpdatesEnabled;
         SelectedUpdateScheduleOption = UpdateScheduleOptions.FirstOrDefault(o => o.Value == s.SignatureUpdateSchedule);
@@ -216,6 +210,7 @@ public partial class SettingsViewModel : ViewModelBase
         s.ScanSchedule = SelectedScheduleOption?.Value ?? "never";
         s.AutoQuarantine = AutoQuarantine;
         s.AutoStart = AutoStart;
+        s.KillSuspiciousProcesses = KillSuspiciousProcesses;
         s.SelfProtectionEnabled = SelfProtection;
         s.NotificationsEnabled = NotificationsEnabled;
         s.ProcessMonitorEnabled = ProcessMonitorEnabled;
@@ -229,17 +224,9 @@ public partial class SettingsViewModel : ViewModelBase
         if (prevSchedule == "never" && s.ScanSchedule != "never")
             s.LastScheduledScan = DateTime.Now;
 
-        s.Exclusions.Extensions = ExcludedExtensions
-            .Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries)
-            .Select(e => e.Trim().StartsWith(".") ? e.Trim() : "." + e.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        s.Exclusions.Folders = ExcludedFolders
-            .Split([Environment.NewLine, "\n"], StringSplitOptions.RemoveEmptyEntries)
-            .Select(f => f.Trim())
-            .Where(f => !string.IsNullOrWhiteSpace(f))
-            .ToList();
+        // User exclusions removed by design: scan-all policy.
+        s.Exclusions.Extensions.Clear();
+        s.Exclusions.Folders.Clear();
 
         s.MonitoredFolders = MonitoredFolders
             .Split([Environment.NewLine, "\n"], StringSplitOptions.RemoveEmptyEntries)

@@ -20,15 +20,18 @@ public class ApplicationServices
     public ProcessMonitor ProcessMonitor { get; }
     public ScanScheduler ScanScheduler { get; }
     public SignatureUpdateService SignatureUpdates { get; }
+    public ThreatFeedService ThreatFeed { get; }
+    public ThreatActionService ThreatActions { get; }
 
     public event Action? DashboardRefreshRequested;
     public event Action<string>? ActivityEvent;
     public event Action? ShowMainWindowRequested;
     public event Action? ExitRequested;
+    public event Action? ThreatFeedChanged;
 
     private readonly Action _onShowMainWindow;
     private readonly Action _onExit;
-    private readonly Action<ThreatInfo> _handleThreat;
+    private readonly Action _onFeedChanged;
 
     public ApplicationServices(
         AppSettings settings,
@@ -39,7 +42,9 @@ public class ApplicationServices
         NotificationService notifications,
         ProcessMonitor processMonitor,
         ScanScheduler scanScheduler,
-        SignatureUpdateService signatureUpdates)
+        SignatureUpdateService signatureUpdates,
+        ThreatFeedService threatFeed,
+        ThreatActionService threatActions)
     {
         Settings = settings;
         Scanner = scanner;
@@ -50,10 +55,12 @@ public class ApplicationServices
         ProcessMonitor = processMonitor;
         ScanScheduler = scanScheduler;
         SignatureUpdates = signatureUpdates;
+        ThreatFeed = threatFeed;
+        ThreatActions = threatActions;
 
         _onShowMainWindow = () => ShowMainWindowRequested?.Invoke();
         _onExit = () => ExitRequested?.Invoke();
-        _handleThreat = HandleThreat;
+        _onFeedChanged = () => ThreatFeedChanged?.Invoke();
     }
 
     public void Initialize()
@@ -74,6 +81,8 @@ public class ApplicationServices
         WireNotificationHandlers();
         WireThreatHandlers();
         WireActivityEvents();
+
+        ThreatFeed.FeedChanged += _onFeedChanged;
 
         if (Settings.RealTimeEnabled)
             SetRealTimeProtection(true);
@@ -117,28 +126,71 @@ public class ApplicationServices
 
     private void WireThreatHandlers()
     {
-        Scanner.OnThreatDetected -= _handleThreat;
-        Scanner.OnThreatDetected += _handleThreat;
+        Scanner.OnThreatDetected -= OnScannerThreat;
+        Scanner.OnThreatDetected += OnScannerThreat;
+
+        RealTimeGuard.ThreatDetected -= OnRealTimeThreat;
+        RealTimeGuard.ThreatDetected += OnRealTimeThreat;
 
         ProcessMonitor.ThreatDetected -= OnProcessMonitorThreat;
         ProcessMonitor.ThreatDetected += OnProcessMonitorThreat;
     }
 
-    private void OnProcessMonitorThreat(ThreatInfo threat) => HandleThreat(threat);
-
-    private void HandleThreat(ThreatInfo threat)
+    private void OnScannerThreat(ThreatInfo threat)
     {
+        // Real-time / process paths use dedicated handlers to avoid duplicate feed entries.
+        if (!Scanner.IsBulkScanActive)
+            return;
+        HandleThreat(threat, ThreatSource.Scan);
+    }
+
+    private void OnRealTimeThreat(ThreatInfo threat) =>
+        HandleThreat(threat, ThreatSource.RealTime);
+
+    private void OnProcessMonitorThreat(ThreatInfo threat) =>
+        HandleThreat(threat, ThreatSource.ProcessMonitor);
+
+    public void HandleThreat(ThreatInfo threat, ThreatSource source)
+    {
+        if (string.IsNullOrWhiteSpace(threat.Source))
+            threat.Source = source.ToString();
+
+        var tier = ThreatRiskClassifier.Classify(threat);
+        var entry = ThreatFeed.Add(threat, source);
+
         if (Settings.NotificationsEnabled)
             Notifications.ShowThreat(threat);
 
-        if (Settings.AutoQuarantine &&
-            ThreatSeverityRules.ShouldAutoQuarantine(threat) &&
+        var actions = new List<string>();
+
+        var pid = threat.ProcessId ?? 0;
+        var shouldKill = Settings.KillSuspiciousProcesses &&
+                         pid > 0 &&
+                         tier >= ThreatRiskTier.Dangerous &&
+                         !TrustedPaths.IsSelfProtected(threat.FilePath);
+
+        if (shouldKill && ThreatActions.TryKillProcess(pid))
+            actions.Add(LocalizationService.Get("ActionKilled"));
+
+        var fromProcess = source == ThreatSource.ProcessMonitor;
+        var shouldQuarantine =
+            (fromProcess && tier >= ThreatRiskTier.Dangerous) ||
+            (Settings.AutoQuarantine && ThreatSeverityRules.ShouldAutoQuarantine(threat));
+
+        if (shouldQuarantine &&
             !string.IsNullOrEmpty(threat.FilePath) &&
-            File.Exists(threat.FilePath))
+            File.Exists(threat.FilePath) &&
+            !TrustedPaths.IsSelfProtected(threat.FilePath))
         {
-            Quarantine.QuarantineFile(threat.FilePath, threat);
+            if (Quarantine.QuarantineFile(threat.FilePath, threat) != null)
+                actions.Add(LocalizationService.Get("ActionQuarantined"));
         }
 
+        if (actions.Count > 0)
+            ThreatFeed.UpdateAction(entry.Id, string.Join("; ", actions));
+
+        Settings.TotalThreatsFound++;
+        SettingsService.Save(Settings);
         DashboardRefreshRequested?.Invoke();
     }
 
@@ -181,10 +233,6 @@ public class ApplicationServices
 
     public void RequestDashboardRefresh() => DashboardRefreshRequested?.Invoke();
 
-    /// <summary>
-    /// Real-time protection = filesystem watcher + process monitor together
-    /// so the Protection page always shows live activity when enabled.
-    /// </summary>
     public void SetRealTimeProtection(bool enabled)
     {
         if (enabled)
@@ -208,8 +256,10 @@ public class ApplicationServices
     public void Shutdown()
     {
         UnwireNotificationHandlers();
-        Scanner.OnThreatDetected -= _handleThreat;
+        Scanner.OnThreatDetected -= OnScannerThreat;
+        RealTimeGuard.ThreatDetected -= OnRealTimeThreat;
         ProcessMonitor.ThreatDetected -= OnProcessMonitorThreat;
+        ThreatFeed.FeedChanged -= _onFeedChanged;
 
         ProcessMonitor.Stop();
         ScanScheduler.Stop();

@@ -12,6 +12,8 @@ public class ScanThreatDisplay
     public string ThreatName { get; init; } = "";
     public string Method { get; init; } = "";
     public string RiskLabel { get; init; } = "";
+    public string Source { get; init; } = "";
+    public string ActionTaken { get; init; } = "";
     public ThreatRiskTier RiskTier { get; init; }
     public ThreatInfo Threat { get; init; } = new();
 }
@@ -55,15 +57,23 @@ public partial class ScanViewModel : ViewModelBase
     [ObservableProperty] private string _colRisk = "";
     [ObservableProperty] private string _summaryLabel = "";
     [ObservableProperty] private bool _hasResults;
+    [ObservableProperty] private bool _hasLiveThreats;
+    [ObservableProperty] private string _allThreatsLabel = "";
+    [ObservableProperty] private string _colSource = "";
+    [ObservableProperty] private string _colAction = "";
 
     public ObservableCollection<ScanThreatDisplay> ThreatResults { get; } = [];
+    public ObservableCollection<ScanThreatDisplay> LiveThreats { get; } = [];
     public ObservableCollection<ThreatRiskGroup> ThreatGroups { get; } = [];
 
     public ScanViewModel(ApplicationServices services)
     {
         _services = services;
         _services.Scanner.OnProgress += OnProgress;
+        _services.ThreatFeed.FeedChanged += RefreshLiveThreats;
+        _services.ThreatFeedChanged += RefreshLiveThreats;
         RefreshLabels();
+        RefreshLiveThreats();
         LocalizationService.LanguageChanged += OnLanguageChanged;
     }
 
@@ -91,7 +101,41 @@ public partial class ScanViewModel : ViewModelBase
         ColThreat = LocalizationService.Get("ColThreat");
         ColMethod = LocalizationService.Get("ColMethod");
         ColRisk = LocalizationService.Get("ColRisk");
+        AllThreatsLabel = LocalizationService.Get("AllThreats");
+        ColSource = LocalizationService.Get("ColSource");
+        ColAction = LocalizationService.Get("ColAction");
         UpdateThreatsLabel();
+    }
+
+    private void RefreshLiveThreats()
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
+            ApplyLiveThreats();
+        else
+            dispatcher.BeginInvoke(new Action(ApplyLiveThreats));
+    }
+
+    private void ApplyLiveThreats()
+    {
+        LiveThreats.Clear();
+        foreach (var entry in _services.ThreatFeed.Entries)
+        {
+            var tier = ThreatRiskClassifier.Classify(entry.Threat);
+            LiveThreats.Add(new ScanThreatDisplay
+            {
+                FilePath = entry.Threat.FilePath,
+                ThreatName = entry.Threat.ThreatName,
+                Method = entry.Threat.Method.ToString(),
+                Source = entry.Source.ToString(),
+                ActionTaken = entry.ActionTaken,
+                RiskTier = tier,
+                RiskLabel = RiskTierLabel(tier),
+                Threat = entry.Threat
+            });
+        }
+
+        HasLiveThreats = LiveThreats.Count > 0;
     }
 
     private void UpdateThreatsLabel()
@@ -336,6 +380,11 @@ public partial class ScanViewModel : ViewModelBase
 
         _services.Quarantine.QuarantineFile(item.FilePath, item.Threat);
         ThreatResults.Remove(item);
+        var live = LiveThreats.FirstOrDefault(t =>
+            string.Equals(t.FilePath, item.FilePath, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(t.ThreatName, item.ThreatName, StringComparison.OrdinalIgnoreCase));
+        if (live != null)
+            LiveThreats.Remove(live);
         RebuildThreatGroups();
         ThreatsFound = ThreatResults.Count;
         HasResults = ThreatResults.Count > 0;

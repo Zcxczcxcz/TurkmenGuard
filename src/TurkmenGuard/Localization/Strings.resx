@@ -90,11 +90,14 @@
   <data name="ColFile" xml:space="preserve"><value>File</value></data>
   <data name="ColThreat" xml:space="preserve"><value>Threat</value></data>
   <data name="ColMethod" xml:space="preserve"><value>Method</value></data>
+  <data name="ColSource" xml:space="preserve"><value>Source</value></data>
+  <data name="ColAction" xml:space="preserve"><value>Action</value></data>
   <data name="ColDate" xml:space="preserve"><value>Date</value></data>
   <data name="ConfirmRestore" xml:space="preserve"><value>Restore this file?</value></data>
   <data name="ConfirmDelete" xml:space="preserve"><value>Delete permanently?</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
   <data name="AutoQuarantine" xml:space="preserve"><value>Auto quarantine</value></data>
+  <data name="KillSuspiciousProcesses" xml:space="preserve"><value>Kill dangerous process on detection</value></data>
   <data name="AutoStart" xml:space="preserve"><value>Start with Windows</value></data>
   <data name="SelfProtection" xml:space="preserve"><value>Self-protection</value></data>
   <data name="Exclusions" xml:space="preserve"><value>Exclusions</value></data>
@@ -107,6 +110,9 @@
   <data name="Notifications" xml:space="preserve"><value>Tray notifications</value></data>
   <data name="ProcessMonitor" xml:space="preserve"><value>Process monitor</value></data>
   <data name="ThreatDetected" xml:space="preserve"><value>Threat detected</value></data>
+  <data name="AllThreats" xml:space="preserve"><value>All threats</value></data>
+  <data name="ActionKilled" xml:space="preserve"><value>Process killed</value></data>
+  <data name="ActionQuarantined" xml:space="preserve"><value>Quarantined</value></data>
   <data name="ScheduledScanDone" xml:space="preserve"><value>Scheduled scan complete. Threats: {0}</value></data>
   <data name="ThemeCorporate" xml:space="preserve"><value>Corporate (blue + green)</value></data>
   <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>

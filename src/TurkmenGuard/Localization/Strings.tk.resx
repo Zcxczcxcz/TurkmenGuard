@@ -91,10 +91,13 @@
   <data name="ColThreat" xml:space="preserve"><value>Howp</value></data>
   <data name="ColMethod" xml:space="preserve"><value>Usul</value></data>
   <data name="ColDate" xml:space="preserve"><value>Sene</value></data>
+  <data name="ColSource" xml:space="preserve"><value>Çeşme</value></data>
+  <data name="ColAction" xml:space="preserve"><value>Hereket</value></data>
   <data name="ConfirmRestore" xml:space="preserve"><value>Faýly dikeltmek isleýärsiňizmi?</value></data>
   <data name="ConfirmDelete" xml:space="preserve"><value>Hemişelik pozmak isleýärsiňizmi?</value></data>
   <data name="Language" xml:space="preserve"><value>Dil</value></data>
   <data name="AutoQuarantine" xml:space="preserve"><value>Awtomatik karantin</value></data>
+  <data name="KillSuspiciousProcesses" xml:space="preserve"><value>Tapylanda howply prosesi togtat</value></data>
   <data name="AutoStart" xml:space="preserve"><value>Windows bilen başlat</value></data>
   <data name="SelfProtection" xml:space="preserve"><value>Öz-özüni goramak</value></data>
   <data name="Exclusions" xml:space="preserve"><value>Hasap edilmeýänler</value></data>
@@ -107,6 +110,9 @@
   <data name="Notifications" xml:space="preserve"><value>Duýduryş habarlary</value></data>
   <data name="ProcessMonitor" xml:space="preserve"><value>Proses gözegçiligi</value></data>
   <data name="ThreatDetected" xml:space="preserve"><value>Howp tapyldy</value></data>
+  <data name="AllThreats" xml:space="preserve"><value>Ähli howplar</value></data>
+  <data name="ActionKilled" xml:space="preserve"><value>Proses togtadyldy</value></data>
+  <data name="ActionQuarantined" xml:space="preserve"><value>Karantine alyndy</value></data>
   <data name="ScheduledScanDone" xml:space="preserve"><value>Meýilleşdirilen barlag tamamlandy. Howplar: {0}</value></data>
   <data name="ThemeCorporate" xml:space="preserve"><value>Korporatiw (gök + ýaşyl)</value></data>
   <data name="ThemeDark" xml:space="preserve"><value>Garaňky</value></data>

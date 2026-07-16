@@ -154,8 +154,7 @@ public class RealTimeGuard : IDisposable
 
         if (_scanner.IsBulkScanActive)
         {
-            if (_settings.IsExcluded(path) || TrustedPaths.IsTrusted(path) ||
-                !ScanPolicy.ShouldScanExtension(path, ScanMode.RealTime))
+            if (!ScanPolicy.ShouldScanExtension(path, ScanMode.RealTime))
                 return;
 
             _pendingPaths[path] = 0;
@@ -163,8 +162,7 @@ public class RealTimeGuard : IDisposable
             return;
         }
 
-        if (_settings.IsExcluded(path) || TrustedPaths.IsTrusted(path) ||
-            !ScanPolicy.ShouldScanExtension(path, ScanMode.RealTime))
+        if (!ScanPolicy.ShouldScanExtension(path, ScanMode.RealTime))
             return;
 
         var now = DateTime.UtcNow;
@@ -270,8 +268,10 @@ public class RealTimeGuard : IDisposable
 
     private void OnScannerThreat(ThreatInfo threat)
     {
-        if (_enabled)
-            ThreatDetected?.Invoke(threat);
+        if (!_enabled)
+            return;
+        threat.Source = "RealTime";
+        ThreatDetected?.Invoke(threat);
     }
 
     public void Dispose()

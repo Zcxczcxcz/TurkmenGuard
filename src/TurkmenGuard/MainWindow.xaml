@@ -4,88 +4,168 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:services="clr-namespace:TurkmenGuard.Services"
         Title="Türkmen Goragçy"
-        Height="800" Width="1240"
-        MinHeight="680" MinWidth="1000"
+        Height="820" Width="1280"
+        MinHeight="700" MinWidth="1080"
         WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource BrandDarkBlueBrush}"
+        Background="{DynamicResource AppBackgroundBrush}"
         TextElement.Foreground="{DynamicResource TextPrimaryBrush}"
-        FontFamily="{StaticResource AppFont}">
+        FontFamily="{StaticResource AppFont}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="40"/>
-        </Grid.RowDefinitions>
+    <Border Background="{DynamicResource AppBackgroundBrush}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="256"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="40"/>
+            </Grid.RowDefinitions>
 
-        <Border Grid.Column="0" Grid.RowSpan="2"
-                Background="{DynamicResource SidebarBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
-            <DockPanel Margin="0,20,0,16">
-                <StackPanel DockPanel.Dock="Top" Margin="18,0,18,24">
-                    <Border Width="44" Height="44" CornerRadius="10"
-                            Background="{DynamicResource AccentGreenBrush}" Margin="0,0,0,12"
-                            Effect="{StaticResource CardShadowEffect}">
-                        <materialDesign:PackIcon Kind="Shield" Width="24" Height="24"
-                                                 Foreground="White" HorizontalAlignment="Center"
-                                                 VerticalAlignment="Center"/>
-                    </Border>
-                    <TextBlock Text="{x:Static services:LocalizationService.AppTitle}"
-                               FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock Text="{x:Static services:LocalizationService.BrandSubtitle}"
-                               FontSize="11" Margin="0,4,0,0"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               TextWrapping="Wrap"/>
-                </StackPanel>
+            <!-- ============ Sidebar ============ -->
+            <Border Grid.Column="0" Grid.RowSpan="2"
+                    Background="{DynamicResource SidebarBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel Margin="0,24,0,16">
 
-                <ListBox x:Name="NavList"
-                         ItemsSource="{Binding NavItems}"
-                         SelectedItem="{Binding SelectedNav, Mode=TwoWay}"
-                         Background="Transparent" BorderThickness="0"
-                         Margin="6,0"
-                         SelectionChanged="NavList_SelectionChanged">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource TgNavListBoxItem}"/>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="{Binding IconKind}" Width="20" Height="20"
-                                                         Margin="0,0,12,0" VerticalAlignment="Center"
-                                                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}"/>
-                                <TextBlock Text="{Binding Title}" FontSize="13" VerticalAlignment="Center"/>
+                    <!-- Brand header -->
+                    <Grid DockPanel.Dock="Top" Margin="22,0,22,24">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="44" Height="44" CornerRadius="12"
+                                Background="{DynamicResource AccentGradientBrush}"
+                                Margin="0,0,14,0">
+                            <materialDesign:PackIcon Kind="ShieldCheck"
+                                                      Width="24" Height="24"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      Foreground="{DynamicResource TextOnAccentBrush}"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Static services:LocalizationService.AppTitle}"
+                                       FontSize="15" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{x:Static services:LocalizationService.BrandSubtitle}"
+                                       FontSize="10" Margin="0,2,0,0"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Protection status pill -->
+                    <Border DockPanel.Dock="Top" Margin="14,0,14,20"
+                            Padding="14,11" CornerRadius="10"
+                            Background="{DynamicResource SidebarAccentBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Width="10" Height="10" Margin="0,0,11,0">
+                                <Ellipse Fill="{DynamicResource AccentGreenBrush}" Opacity="0.35">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform ScaleX="1" ScaleY="1" CenterX="5" CenterY="5"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <Ellipse Fill="{DynamicResource AccentGreenBrush}" Width="6" Height="6"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                            <StackPanel>
+                                <TextBlock Text="{Binding StatusText}" FontSize="11.5" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
-        </Border>
+                        </StackPanel>
+                    </Border>
 
-        <Border Grid.Column="1" Grid.Row="0" Padding="28,24"
-                Background="{DynamicResource BrandDarkBlueBrush}">
-            <ContentControl Content="{Binding CurrentView}"/>
-        </Border>
+                    <!-- Navigation -->
+                    <ListBox x:Name="NavList"
+                             ItemsSource="{Binding NavItems}"
+                             SelectedItem="{Binding SelectedNav, Mode=TwoWay}"
+                             Background="Transparent" BorderThickness="0"
+                             Margin="8,0" Padding="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             SelectionChanged="NavList_SelectionChanged">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+                                <Setter Property="Padding" Value="16,12"/>
+                                <Setter Property="Margin" Value="0,2"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                                <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="FontSize" Value="13.5"/>
+                                <Setter Property="FontWeight" Value="Medium"/>
+                                <Setter Property="materialDesign:ListBoxItemAssist.ShowSelection" Value="False"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                                                    <Setter Property="Background" Value="{DynamicResource CardHoverBackgroundBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentGreenBrush}"/>
+                                                    <Setter Property="Background" Value="{DynamicResource AccentGreenFaintBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{Binding IconKind}"
+                                                              Width="19" Height="19" Margin="0,0,14,0"
+                                                              VerticalAlignment="Center"
+                                                              Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}"/>
+                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
 
-        <Border Grid.Column="1" Grid.Row="1"
-                Background="{DynamicResource SidebarBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
-                Padding="16,0">
-            <DockPanel VerticalAlignment="Center">
-                <TextBlock DockPanel.Dock="Right" Text="{Binding VersionText}"
-                           FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                <StackPanel Orientation="Horizontal">
-                    <Ellipse Width="8" Height="8" Margin="0,0,8,0">
-                        <Ellipse.Fill>
-                            <Binding Path="IsProtectionEnabled" Converter="{StaticResource ProtectionBrushConverter}"/>
-                        </Ellipse.Fill>
-                    </Ellipse>
-                    <TextBlock Text="{Binding StatusText}" FontSize="11"
-                               Foreground="{DynamicResource TextSecondaryBrush}"/>
-                </StackPanel>
-            </DockPanel>
-        </Border>
-    </Grid>
+            <!-- ============ Content ============ -->
+            <Border Grid.Column="1" Grid.Row="0" Padding="36,28,36,8"
+                    Background="{DynamicResource AppBackgroundBrush}">
+                <ContentControl Content="{Binding CurrentView}"/>
+            </Border>
+
+            <!-- ============ Status bar ============ -->
+            <Border Grid.Column="1" Grid.Row="1"
+                    Background="{DynamicResource SidebarBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+                    Padding="20,0">
+                <DockPanel VerticalAlignment="Center">
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding VersionText}"
+                               FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="7" Height="7" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <Binding Path="IsProtectionEnabled" Converter="{StaticResource ProtectionBrushConverter}"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
 </Window>

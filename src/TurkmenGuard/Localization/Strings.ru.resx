@@ -91,10 +91,13 @@
   <data name="ColThreat" xml:space="preserve"><value>Угроза</value></data>
   <data name="ColMethod" xml:space="preserve"><value>Метод</value></data>
   <data name="ColDate" xml:space="preserve"><value>Дата</value></data>
+  <data name="ColSource" xml:space="preserve"><value>Источник</value></data>
+  <data name="ColAction" xml:space="preserve"><value>Действие</value></data>
   <data name="ConfirmRestore" xml:space="preserve"><value>Восстановить этот файл?</value></data>
   <data name="ConfirmDelete" xml:space="preserve"><value>Удалить безвозвратно?</value></data>
   <data name="Language" xml:space="preserve"><value>Язык</value></data>
   <data name="AutoQuarantine" xml:space="preserve"><value>Авто-карантин</value></data>
+  <data name="KillSuspiciousProcesses" xml:space="preserve"><value>Завершать опасные процессы при обнаружении</value></data>
   <data name="AutoStart" xml:space="preserve"><value>Запуск с Windows</value></data>
   <data name="SelfProtection" xml:space="preserve"><value>Самозащита</value></data>
   <data name="Exclusions" xml:space="preserve"><value>Исключения</value></data>
@@ -107,6 +110,9 @@
   <data name="Notifications" xml:space="preserve"><value>Уведомления в трее</value></data>
   <data name="ProcessMonitor" xml:space="preserve"><value>Мониторинг процессов</value></data>
   <data name="ThreatDetected" xml:space="preserve"><value>Обнаружена угроза</value></data>
+  <data name="AllThreats" xml:space="preserve"><value>Все угрозы</value></data>
+  <data name="ActionKilled" xml:space="preserve"><value>Процесс завершён</value></data>
+  <data name="ActionQuarantined" xml:space="preserve"><value>В карантине</value></data>
   <data name="ScheduledScanDone" xml:space="preserve"><value>Плановое сканирование завершено. Угроз: {0}</value></data>
   <data name="ThemeCorporate" xml:space="preserve"><value>Корпоративная (синий + зелёный)</value></data>
   <data name="ThemeDark" xml:space="preserve"><value>Тёмная</value></data>

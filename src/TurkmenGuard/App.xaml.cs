@@ -12,6 +12,7 @@ namespace TurkmenGuard;
 public partial class App : Application
 {
     private ApplicationServices? _services;
+    private bool _startupUiReady;
 
     // Without this Windows shows "notifyicon generated aumid" instead of Turkmen Guard.
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
@@ -25,7 +26,10 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             Logger.Error($"Unhandled UI exception: {args.Exception}");
-            args.Handled = true;
+            // Do not swallow failures while the main window is still being built —
+            // otherwise the process stays alive with tray/services and no UI.
+            if (_startupUiReady)
+                args.Handled = true;
         };
         AppDomain.CurrentDomain.ProcessExit += (_, _) => Logger.FlushOnExit();
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
@@ -63,16 +67,38 @@ public partial class App : Application
         var scanScheduler = new ScanScheduler(settings, scanner);
         var signatureUpdates = new SignatureUpdateService(settings, scanner);
 
+        var threatFeed = new ThreatFeedService();
+        var threatActions = new ThreatActionService();
+
         _services = new ApplicationServices(
             settings, scanner, quarantine, realTimeGuard, selfProtection,
-            notifications, processMonitor, scanScheduler, signatureUpdates);
+            notifications, processMonitor, scanScheduler, signatureUpdates,
+            threatFeed, threatActions);
 
         _services.Initialize();
 
         var startInTray = e.Args.Any(a =>
             a.Equals(AutoStartService.TrayArgument, StringComparison.OrdinalIgnoreCase));
 
-        var mainWindow = new MainWindow(_services);
+        MainWindow mainWindow;
+        try
+        {
+            mainWindow = new MainWindow(_services);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to create main window: {ex}");
+            System.Windows.MessageBox.Show(
+                $"Не удалось открыть окно TurkmenGuard.\n\n{ex.GetBaseException().Message}",
+                "TurkmenGuard",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            _services.Shutdown();
+            Shutdown(1);
+            return;
+        }
+
+        MainWindow = mainWindow;
         if (startInTray)
         {
             mainWindow.Hide();
@@ -85,6 +111,8 @@ public partial class App : Application
         {
             mainWindow.Show();
         }
+
+        _startupUiReady = true;
     }
 
     protected override void OnExit(ExitEventArgs e)

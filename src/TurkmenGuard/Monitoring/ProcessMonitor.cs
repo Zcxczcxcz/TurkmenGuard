@@ -118,7 +118,9 @@ public class ProcessMonitor : IDisposable
                             ThreatName = $"Blacklisted.Process.{name}",
                             Method = DetectionMethod.Process,
                             Severity = ThreatSeverity.High,
-                            Details = $"Blacklisted process: {name}"
+                            Details = $"Blacklisted process: {name}",
+                            ProcessId = proc.Id,
+                            Source = "ProcessMonitor"
                         };
                         Logger.Threat(threat.Details);
                         Interlocked.Increment(ref _threatsFound);
@@ -133,15 +135,14 @@ public class ProcessMonitor : IDisposable
                     StatsChanged?.Invoke();
 
                     if (string.IsNullOrEmpty(path) || !File.Exists(path) ||
-                        !path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
                         _scanner.IsBulkScanActive ||
-                        _settings.IsExcluded(path) ||
-                        TrustedPaths.IsTrusted(path))
+                        TrustedPaths.IsSelfProtected(path))
                         continue;
 
                     Interlocked.Increment(ref _processesScanned);
                     var capturedName = name;
                     var capturedPath = path;
+                    var capturedPid = proc.Id;
                     _ = Task.Run(async () =>
                     {
                         var result = await _scanner.ScanFileAsync(capturedPath, ScanMode.RealTime);
@@ -154,6 +155,10 @@ public class ProcessMonitor : IDisposable
 
                         foreach (var threat in result.Threats)
                         {
+                            threat.ProcessId = capturedPid;
+                            threat.Source = "ProcessMonitor";
+                            if (string.IsNullOrEmpty(threat.FilePath))
+                                threat.FilePath = capturedPath;
                             Interlocked.Increment(ref _threatsFound);
                             ProcessEvent?.Invoke(LocalizationService.Format("PmProcessThreat", capturedName, threat.ThreatName));
                             ThreatDetected?.Invoke(threat);

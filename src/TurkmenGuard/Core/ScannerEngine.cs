@@ -15,8 +15,8 @@ public class ScannerEngine : IDisposable
     private readonly AppSettings _settings;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly SemaphoreSlim _fileScanSemaphore = new(1, 1);
-    // Quick/batch: match ClamAV TCP gate (3)
-    private readonly SemaphoreSlim _bulkParallelism = new(3, 3);
+    // Quick/batch: parallel clamd workers (6 for faster Quick Scan)
+    private readonly SemaphoreSlim _bulkParallelism = new(6, 6);
     private readonly object _ctsLock = new();
     private CancellationTokenSource? _scanCts;
     private FullScanTimer? _fullScanTimer;
@@ -126,9 +126,12 @@ public class ScannerEngine : IDisposable
         if (_settings.IsExcluded(path) || !ScanPolicy.ShouldScanExtension(path, mode))
             return result;
 
-        // Locked OS files — probe before YARA/hash; Full skips probe (ClamAV fails fast on locks)
-        if (mode != ScanMode.Full && !ScanPolicy.CanOpenForScan(path))
-            return result;
+        // Locked files — retry later instead of permanent skip
+        if (!ScanPolicy.CanOpenForScan(path))
+        {
+            MarkClamIncomplete(path, result);
+            return FinalizeResult(result, sw, mode);
+        }
 
         try
         {
@@ -409,7 +412,7 @@ public class ScannerEngine : IDisposable
     private async Task<List<ScanResult>> RunClamRetryPassAsync(ScanProgress progress, CancellationToken ct)
     {
         var results = new List<ScanResult>();
-        if (_clamRetryQueue == null || _fullScanTimer == null)
+        if (_clamRetryQueue == null)
             return results;
 
         var pending = _clamRetryQueue.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
@@ -418,11 +421,11 @@ public class ScannerEngine : IDisposable
 
         progress.Phase = "retry";
         _clamRetryPassActive = true;
-        Logger.Info($"Full scan ClamAV retry pass: {pending.Count} files (elapsed {_fullScanTimer.ElapsedLabel})");
+        var elapsedLabel = _fullScanTimer?.ElapsedLabel ?? "n/a";
+        Logger.Info($"ClamAV retry pass: {pending.Count} files (elapsed {elapsedLabel})");
         ReportProgressThrottled(progress, force: true);
 
-        const int maxRounds = 8;
-        const int retryTimeoutMs = 300_000;
+        const int maxRounds = 10;
 
         try
         {
@@ -430,9 +433,10 @@ public class ScannerEngine : IDisposable
             {
                 ct.ThrowIfCancellationRequested();
                 var stillPending = new List<string>();
+                var retryTimeoutMs = Math.Min(600_000, 60_000 * (1 << Math.Min(round - 1, 4)));
 
                 if (round > 1)
-                    Logger.Info($"ClamAV retry round {round}: {pending.Count} files remaining");
+                    Logger.Info($"ClamAV retry round {round} ({retryTimeoutMs / 1000}s timeout): {pending.Count} files remaining");
 
                 foreach (var path in pending)
                 {
@@ -837,9 +841,9 @@ public class ScannerEngine : IDisposable
     private int ResolveFullParallelism()
     {
         if (!_clam.DaemonReady)
-            return 1;
-        // Full Scan: one file at a time through clamd — fewer skips, retry queue stays small
-        return 1;
+            return 2;
+        // Adaptive: faster when clamd healthy, backs off under timeout streak
+        return _clam.TimeoutStreak >= 12 ? 2 : 4;
     }
 
     private async Task ScanOneFileAsync(
@@ -984,6 +988,9 @@ public class ScannerEngine : IDisposable
             }
             else
             {
+                _clamRetryQueue = new ConcurrentBag<string>();
+                Interlocked.Exchange(ref _clamIncompleteCount, 0);
+
                 foreach (var root in PathHelper.GetQuickScanPaths())
                 {
                     token.ThrowIfCancellationRequested();
@@ -991,6 +998,9 @@ public class ScannerEngine : IDisposable
                     allResults.AddRange(await ScanDirectoryAsync(root, mode, progress, token)
                         .ConfigureAwait(false));
                 }
+
+                allResults.AddRange(await RunClamRetryPassAsync(progress, token).ConfigureAwait(false));
+                progress.ClamAvIncompleteCount = Math.Max(0, Volatile.Read(ref _clamIncompleteCount));
             }
 
             RecordManualScanStats(progress.FilesScanned, allResults);

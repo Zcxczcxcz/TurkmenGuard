@@ -14,6 +14,40 @@
                         Style="{StaticResource TgOutlineButton}" Content="{Binding FullScanLabel}"/>
             </UniformGrid>
 
+            <!-- Live threat feed: RT, process monitor, scans -->
+            <materialDesign:Card Style="{StaticResource TgCard}"
+                               Visibility="{Binding HasLiveThreats, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding AllThreatsLabel}" Style="{StaticResource TgSectionTitle}" Margin="0,0,0,12"/>
+                    <DataGrid ItemsSource="{Binding LiveThreats}" AutoGenerateColumns="False"
+                              IsReadOnly="True" CanUserAddRows="False" MaxHeight="280"
+                              Style="{StaticResource TgDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{Binding DataContext.ColFile, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Binding="{Binding FilePath}" Width="*"/>
+                            <DataGridTextColumn Header="{Binding DataContext.ColThreat, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Binding="{Binding ThreatName}" Width="120"/>
+                            <DataGridTextColumn Header="{Binding DataContext.ColSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Binding="{Binding Source}" Width="90"/>
+                            <DataGridTextColumn Header="{Binding DataContext.ColRisk, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Binding="{Binding RiskLabel}" Width="90"/>
+                            <DataGridTextColumn Header="{Binding DataContext.ColAction, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Binding="{Binding ActionTaken}" Width="100"/>
+                            <DataGridTemplateColumn Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding DataContext.QuarantineLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Command="{Binding DataContext.QuarantineThreatCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource MaterialDesignFlatButton}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </materialDesign:Card>
+
             <materialDesign:Card Style="{StaticResource TgCard}">
                 <StackPanel>
                     <TextBlock Text="{Binding FileScanLabel}" FontWeight="SemiBold" Margin="0,0,0,12"/>

@@ -59,6 +59,10 @@ public class ThreatInfo
     public ThreatSeverity Severity { get; set; } = ThreatSeverity.Medium;
     public string Details { get; set; } = "";
     public DateTime DetectedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>When detected from ProcessMonitor — used for kill-before-quarantine.</summary>
+    public int? ProcessId { get; set; }
+    /// <summary>Human-readable origin: Scan, RealTime, ProcessMonitor, Scheduled.</summary>
+    public string Source { get; set; } = "";
 }
 
 public class ScanResult

@@ -63,7 +63,7 @@ public static class PathHelper
         return folders.Distinct().ToList();
     }
 
-    /// <summary>User-facing folders only — Temp is excluded (huge, mostly FPs, slow).</summary>
+    /// <summary>Wide Quick Scan coverage — user profile, programs, temp, appdata.</summary>
     public static List<string> GetQuickScanPaths()
     {
         var paths = new List<string>();
@@ -71,7 +71,18 @@ public static class PathHelper
         AddIfExists(paths, Path.Combine(userProfile, "Downloads"));
         AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
         AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
-        return paths;
+        AddIfExists(paths, Path.Combine(userProfile, "AppData", "Local"));
+        AddIfExists(paths, Path.Combine(userProfile, "AppData", "Roaming"));
+        AddIfExists(paths, Path.Combine(userProfile, "AppData", "Local", "Temp"));
+        AddIfExists(paths, Path.GetTempPath());
+        AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+        AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86));
+        AddIfExists(paths, Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData));
+        AddIfExists(paths, Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "Microsoft", "Windows", "Start Menu", "Programs", "Startup"));
+        AddIfExists(paths, Path.Combine(userProfile, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup"));
+        return paths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public static List<string> GetFullScanPaths() =>

@@ -423,6 +423,34 @@ TurkmenGuard/
 
 ## История изменений (Changelog)
 
+### v4.8.1 (2026-07-16) — scan-all policy, unified threats, process kill + quarantine
+**Главная цель:** не терять угрозы и не пропускать файлы даже при таймаутах.
+
+**Что изменено:**
+- **Scan-all policy:** убраны пользовательские исключения и extension skip-листы; все файлы идут в пайплайн сканера (кроме действительно недоступных OS-locked файлов типа `pagefile.sys`)
+- **Unified Threat Feed:** все угрозы (Quick/Full/Custom/File/Real-time/Process monitor) попадают в общий раздел **All threats** на странице Scan
+- **Process hard response:** для `Dangerous/Malware` из ProcessMonitor добавлен kill процесса + попытка карантина файла
+- **Auto quarantine не обязателен:** process-угрозы `Dangerous+` теперь уходят в карантин даже если global AutoQuarantine выключен
+- **Retry после timeout:** таймаутные файлы ставятся в повторную очередь с увеличением времени обработки (экспоненциальный backoff до 10 минут)
+- **Производительность:** увеличена параллельность Quick/Batch; Full scan получил adaptive 2–4 worker режима при здоровом clamd
+- **Quick Scan coverage расширен:** добавлены AppData/Temp/Program Files/CommonApplicationData + Startup paths
+
+**Важно:**
+- Самозащита движка сохранена: собственные бинарники/базы не удаляются и не карантинятся.
+- Если файл заблокирован во время первой попытки, он не теряется — переходит в retry-проход.
+
+### Hotfix (2026-07-16) — окно не открывалось после UI-оптимизации
+**Проблема:** после переноса стилей в `App.xaml` процесс запускался (трей/ClamAV), но главное окно не появлялось.
+
+**Причина:** из `MergedDictionaries` убрали `Themes/Styles.xaml` и `Themes/Animations.xaml`, а ресурсы `TgStatValue` (StatCard) и `TgPulseLoader` (Dashboard) не перенесли. `XamlParseException` глотался в `DispatcherUnhandledException` → «невидимый» процесс.
+
+**Исправление:**
+- Вернули merge `Themes/Animations.xaml`
+- Добавили алиас `TgStatValue` → `TgStatNumber` в `App.xaml`
+- `CardCornerRadius` → `sys:Double` (для `UniformCornerRadius`)
+- `CardPadding` → `Thickness` (для `Padding`)
+- Ошибки создания MainWindow больше не оставляют процесс без UI (try/catch + не глотать исключения до готовности окна)
+
 ### v4.8.0 (2026-07-15) — Full Scan: качество без тайм-лимитов + ETA в часах
 **Проблема:** лог забивался `INSTREAM slow/connect (streak=1)` — ClamAV скипал файлы из‑за коротких таймаутов (1.5–3.5 с) и «overload shrink».
 
